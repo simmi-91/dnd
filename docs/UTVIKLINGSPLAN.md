@@ -268,7 +268,7 @@ Hver fase skal kunne rulles ut og brukes for seg.
 **Ferdig når:** Elin kan logge inn på `https://dnd.3lin.no` fra både mobil og laptop, og en push til main ruller ut automatisk.
 
 ### Fase 2 – Spill, karakter og ark
-- [ ] `packages/rules`: `deriveCharacter` i TypeScript med fixture-tester
+- [x] `packages/rules`: `deriveCharacter` i TypeScript med fixture-tester (2a)
 - [ ] Tabellene `dd_characters`, `dd_games` og `dd_game_state`
 - [ ] Hente fra D&D Beyond på serveren, lim inn som reserve, oppdater med nivåkort
 - [ ] Mine spill, Nytt spill, arkivering

@@ -53,6 +53,30 @@ Se «Arbeidsmåte» i `CLAUDE.md`: workers per del med passende modell, uavhengi
 - **Web:** menyen har bare «Mine spill» og «Konto». Valgene for et spill kommer i fase 2–4. Brytepunktet er 700 px, som i kapittel 8. `--dim` er `#6f604c` og `--nav-dim` er `#a8957a`, litt mørkere og lysere enn skissen, for å nå WCAG AA. Sentral håndtering i QueryClient: 401 sender til `/logg-inn`, og 403 `blocked` viser «Kontoen er sperret».
 - **Kysely 0.29:** `Migrator` og `Migration` importeres fra `kysely/migration`.
 
+## Beslutninger under fase 2a (regelmotoren)
+
+- **Fixtures:** `packages/rules/fixtures/elowen-4.json` (Gloom Stalker Ranger 4) og `lego-ranger-5.json` (Hunter Ranger 5) er ekte D&D Beyond-svar, anonymisert med `npm run fixture -w @dnd/rules`. Karakter-ID-en er byttet til 1000001 og 1000002. `userId`, `username`, `campaign`, `readonlyUrl` og `decorations` er nullet ut. Skriptet stopper hvis den ekte ID-en finnes i utdataene.
+- **`Sheet`** (`src/sheet.ts`, `DERIVE_VERSION = 1`):
+  - Feltene er nær prototypen.
+  - Fjernet: `id`, `avatar` og `v`. D&D Beyond-ID-en lagres i `dd_characters.ddb_id`.
+  - Lagt til: `classes`, `summary`, `resources` (alle `limitedUse` med stabile nøkler), `hitDice` (per terningstørrelse, nøkler som `'d10'`), `shield`, `pactSlots` og `slotsUsed`.
+  - `castAb`, `spellDc` og `spellAttack` kan være `null`.
+- **Gjenstander:**
+  - `modifiers.item` brukes ikke, fordi D&D Beyond tar med alle gjenstander i inventory, også de som ikke er utrustet. I stedet telles `grantedModifiers` på gjenstander som virker: utrustet eller `canEquip false`, attunet når det kreves, og ikke forbruksgjenstander.
+  - Spells fra gjenstander følger samme regel. En Potion of Speed gir derfor ikke Haste.
+- **Rase fra 2014 med bakgrunn fra 2024:** Rasens `*-score`-bonuser telles ikke når `race.isLegacy` er sann og bakgrunnen gir økninger i evneverdier (feat fra `background.grantedFeats` eller `__INITIAL_ASI` med `bonus/*-score`). D&D Beyond gjør det samme.
+- **Weapon Mastery** gjelder bare når den er valgt for våpentypen. Nick som egenskap ved våpenet alene gir ikke Nick-regelen.
+- **Spell slots:** én caster-klasse bruker klassens egen tabell. Multiclass bruker 2024-tabellen: full caster teller fullt, half rundes opp og third rundes ned. Warlock har Pact Magic for seg.
+- **`resetType`:** 2 = Long Rest (sett i data), 1 = Short Rest (antatt), alt annet = `other`.
+- **`attacksPerAction`** leses fra `set/extra-attacks`, med navnet «Extra Attack» som reserve. Initiativ tar med `statId`-bonuser, `ability-checks` og halv proficiency. Den faste reserven «Dread Ambusher → WIS» er fjernet.
+- **Følgesvenner:**
+  - `seedPetTraits` tar en funksjon som lager ID-ene, og bruker ikke `Math.random`.
+  - Følgesvenner som legges inn for hånd har typen `Companion`, med `initiativeBonus`, `hpMax` og `ac`. Ugla med fast +1 er borte.
+- **Import** (`src/import.ts`):
+  - `initialGameState`, `mergeOnRefresh` og `newFeatures`.
+  - Kjæledyr som er borte fra D&D Beyond, beholder trekk og HP i `GameState`, så de er der hvis dyret kommer tilbake.
+  - `shortRest` og `longRest` kommer i 2b.
+
 ## Status
 
 - **Fase 0 og 1 er ferdige** (4. november 2026). Appen kjører på `https://dnd.3lin.no`, innlogging med Google virker på mobil og laptop, og push til `main` ruller ut automatisk.
@@ -67,4 +91,7 @@ Se «Arbeidsmåte» i `CLAUDE.md`: workers per del med passende modell, uavhengi
   - `npm audit --omit=dev` gir 3 moderate funn via `@fastify/static` → `glob` → `minimatch`. Ikke bruk `audit fix --force`.
   - TypeScript står på 6.0.3, fordi typescript-eslint ennå ikke støtter 7.
   - `dd_`-vernet hindrer feil i migreringene, men databasebrukeren har tilgang til hele `prodbase`. En egen databasebruker er anbefalt (`deploy/README.md` §10).
-- **Neste fase:** 2a, regelmotoren (`deriveCharacter` i `packages/rules`), i en ny tråd.
+- **Fase 2a er ferdig** (4. november 2026). `deriveCharacter` gir Elowens tall fra D&D Beyond: HP 40, AC 14, Init +6, Longbow +7 1d8+3 og alle saves og skills som er sjekket. Lint, typecheck, test (194 tester), build og `prettier --check` går gjennom, og alle funn fra den uavhengige valideringen er rettet.
+  - **Lego-rangeren er sjekket mot D&D Beyond-arket:** DEX 18, AC 18, Init +4, HP 39, Longbow +9 1d8+4, Perception +9, og alle saves og skills.
+  - **Ikke sett i ekte data:** multiclass, third casters, `resetType` 1 og `operator` 2 på `limitedUse`. Disse er bare testet med håndlagde objekter.
+- **Neste fase:** 2b. Det omfatter tabellene `dd_characters`, `dd_games` og `dd_game_state`, henting fra D&D Beyond med en grense per bruker, Mine spill og Nytt spill, ark og følgesvenner, og HP, Short Rest og Long Rest. Den tas i en ny tråd.
