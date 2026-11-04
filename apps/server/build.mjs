@@ -80,6 +80,9 @@ const distPkg = {
   private: true,
   type: 'module',
   engines: { node: '>=22' },
+  // På serveren ligger .env i mappen over (/var/www/dnd/.env). Utrullingen kjører
+  // `sudo -u <bruker> npm run migrate`, fordi sudo bare tillater npm og pm2 for den brukeren.
+  scripts: { migrate: 'node --env-file=../.env migrate.js' },
   dependencies,
 };
 writeFileSync(join(outdir, 'package.json'), `${JSON.stringify(distPkg, null, 2)}\n`);

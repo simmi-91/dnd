@@ -191,7 +191,8 @@ jobs:
             # Migrering: etter at ny kode ligger på plass, før restart.
             # Migreringer rulles IKKE tilbake ved rollback. Skriv dem bakoverkompatible.
             echo "Running migrations..."
-            sudo -u "$DEPLOY_USER" node --env-file="$ENV_FILE" "$APP_DIR/server/migrate.js"
+            # Via npm, fordi sudo bare tillater npm og pm2 som kjøringsbrukeren (som i de andre prosjektene)
+            sudo -u "$DEPLOY_USER" npm run migrate
 
             start_app
 
