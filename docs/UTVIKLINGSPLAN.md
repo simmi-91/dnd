@@ -265,7 +265,7 @@ Hver fase skal kunne rulles ut og brukes for seg.
 - [x] Web-skall i pergamentstil: innlogging, tom «Mine spill», bunnmeny og sidemeny
 - [x] Nginx, tjeneste og GitHub Actions-utrulling til subdomenet
 
-**Ferdig når:** Elin kan logge inn på `https://dnd.3lin.no` fra både mobil og laptop, og en push til main ruller ut automatisk. *(Gjenstår: oppsett på serveren og første push. Se «Status» i AVKLARINGER.)*
+**Ferdig når:** Elin kan logge inn på `https://dnd.3lin.no` fra både mobil og laptop, og en push til main ruller ut automatisk.
 
 ### Fase 2 – Spill, karakter og ark
 - [ ] `packages/rules`: `deriveCharacter` i TypeScript med fixture-tester

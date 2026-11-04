@@ -55,19 +55,16 @@ Se «Arbeidsmåte» i `CLAUDE.md`: workers per del med passende modell, uavhengi
 
 ## Status
 
-- **Fase 0 og 1 er ferdige i kode og uavhengig testet** (4. november 2026).
-  - Lint, typecheck, test (135 tester), build og `prettier --check` går gjennom fra rent.
-  - Det er gjort en ekte kjøring i utvikling mot `development_db`, og en kjøring som i produksjon med `npm ci --omit=dev` og `WEB_DIR`.
-  - Deploy-skriptet er simulert med feil på hvert steg.
-  - Alle funn fra testene er rettet.
-- **Gjenstår før fase 1 er helt ferdig.** Brukeren må gjøre dette på serveren:
-  1. Lag en OAuth-klient i Google med origins `https://dnd.3lin.no` og `http://localhost:5173`, og legg `GOOGLE_CLIENT_ID` i `/var/www/dnd/.env` og i den lokale `apps/server/.env`.
-  2. Sett opp serveren etter `deploy/README.md`: mapper, `.env`, nginx og certbot, og pm2. Vurder en egen databasebruker (§10).
-  3. Legg inn secrets i GitHub: `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY` og `DEPLOY_RUN_AS_USER`.
-  4. Push til `main`, og se at utrullingen går gjennom. `actions/checkout` og `actions/setup-node` er festet til v7, som er nyere enn i de andre prosjektene.
-  5. Logg inn på `https://dnd.3lin.no` fra mobil og laptop. Google-flyten er ikke prøvd ende til ende, fordi det ikke finnes noen client ID lokalt.
+- **Fase 0 og 1 er ferdige** (4. november 2026). Appen kjører på `https://dnd.3lin.no`, innlogging med Google virker på mobil og laptop, og push til `main` ruller ut automatisk.
+  - Lint, typecheck, test (135 tester), build og `prettier --check` går gjennom.
+  - Alle funn fra de uavhengige testene er rettet.
+- **Lærdom fra første utrulling:**
+  - Sudo på serveren tillater bare `npm` og `pm2` som kjøringsbrukeren, ikke `node`. Migreringen kjøres derfor med `npm run migrate` (skriptet ligger i `dist/package.json` og leser `../.env`).
+  - `WEB_DIR=/var/www/dnd/client` må stå i `/var/www/dnd/.env`. Uten den svarer `/` med JSON 404.
+  - Nginx-filen på serveren bruker `localhost:8032`. `127.0.0.1:8032`, som i `deploy/nginx/dnd.3lin.no`, er anbefalt.
 - **Kjent:**
   - jsdom 30 krever Node ^22.22.2, men WSL har 22.21.1. Det virker, men oppdater med `nvm install 22`.
   - `npm audit --omit=dev` gir 3 moderate funn via `@fastify/static` → `glob` → `minimatch`. Ikke bruk `audit fix --force`.
   - TypeScript står på 6.0.3, fordi typescript-eslint ennå ikke støtter 7.
+  - `dd_`-vernet hindrer feil i migreringene, men databasebrukeren har tilgang til hele `prodbase`. En egen databasebruker er anbefalt (`deploy/README.md` §10).
 - **Neste fase:** 2a, regelmotoren (`deriveCharacter` i `packages/rules`), i en ny tråd.
