@@ -1,36 +1,26 @@
-# D&D kampguide
+# D&D 5e Kampguide (2024-regler)
 
-Kampguide og kampanjebok for D&D 5e (2024-reglene). Brukes på mobil og laptop ved spillebordet.
+- **Utviklingsplan:** `docs/UTVIKLINGSPLAN.md` (beslutninger, datamodell, API, faser).
+- **Referanse & Design:** Prototyp i `reference/prototype/` (rør ikke). Designskisser i `docs/design/` (Variant B «Pergament»).
+- **Språk:** Norsk i appen, engelske D&D-regelord. Brukeren skriver norsk[cite: 1].
+- **Database:** Prefiks `dd_` på alle tabeller (delt DB)[cite: 1]. Lokal MySQL i Docker via WSL[cite: 1].
+- **Utrulling:** Følg mønster i `deploy/`[cite: 1]. GitHub Actions ruller ut fra `main`[cite: 1].
+- **Prosess & Orkestrering:** Se `docs/PROSESS.md` (kun for hovedagent).
 
-- **Start med `docs/UTVIKLINGSPLAN.md`.** Den har beslutningene, datamodellen, API-et og fasene.
-- Prototypen ligger i `reference/prototype/` og er bare referanse. Den skal ikke bygges eller endres.
-- Designskisser ligger i `docs/design/`. Variant B «Pergament» er valgt.
-- Brukeren skriver norsk. Teksten i appen er norsk, med engelske regelord fra D&D.
-- Databasen er delt med andre prosjekter. Alle tabeller skal ha prefikset `dd_`, og ingen migrering skal røre andre tabeller.
-- Utrulling, Node-kjøring og Google-innlogging skal følge mønsteret i brukerens andre prosjekter i WSL.
-- Utviklingen skjer mot en lokal MySQL i Docker. WSL har ikke tilgang til produksjonsserveren. Serverkonfigurasjon lages som filer i `deploy/`, og brukeren installerer dem selv.
+## Kommandoer & Konvensjoner
 
-## Kommandoer og konvensjoner
+- **Node (WSL):** `wsl.exe -d Ubuntu-24.04 -- bash -ic 'cd ~/_server_/dnd && <kommando>'` (Node 22 via nvm)[cite: 1].
+- **Skript (rota):** `npm run dev` (server 8032, Vite 5173), `lint`, `typecheck`, `test`, `build`, `prettier --check`, `format`, `migrate`[cite: 1].
+  - Pakke-filter: `-w @dnd/server`, `-w @dnd/web`, `-w @dnd/rules`, `-w @dnd/shared`[cite: 1].
+- **Krav før ferdigstilling:** `lint`, `typecheck`, `test`, `build` og `prettier --check` skal være grønne[cite: 1].
+- **Miljø:** Lokal i `apps/server/.env` (se `.env.example`)[cite: 1]. Prod: `/var/www/dnd/.env`[cite: 1]. Tester bruker `TEST_DB_NAME` (`dnd_test`), aldri `DB_NAME`[cite: 1].
+- **Innlogging:** Dev-login på `/api/auth/dev-login` når `DEV_LOGIN_EMAIL` er satt[cite: 1].
+- **API:** Kontrakt i `packages/shared`[cite: 1]. Skrivende kall krever `X-Requested-With: dnd`[cite: 1].
+- **Sikkerhet:** Offentlig repo – ingen hemmeligheter, `.env`-innhold eller ekte D&D Beyond-ID-er[cite: 1].
 
-- **Node:** Node og npm kjøres alltid inne i WSL. Node kommer fra nvm og krever en interaktiv shell, så fra Windows: `wsl.exe -d Ubuntu-24.04 -- bash -ic 'cd ~/_server_/dnd && <kommando>'`. Node 22 (`.nvmrc`).
-- **Skript fra rota:** `npm run dev` (server på 8032, Vite på 5173), `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npx prettier --check .`, `npm run format`, `npm run migrate`. For én pakke: `-w @dnd/server`, `-w @dnd/web`, `-w @dnd/rules` eller `-w @dnd/shared`.
-- **Før noe er ferdig:** lint, typecheck, test, build og `prettier --check` skal være grønne.
-- **Miljø:** lokale variabler i `apps/server/.env` (aldri i git). `apps/server/.env.example` viser alle variablene. I produksjon: `/var/www/dnd/.env`. Serverens tester bruker `TEST_DB_NAME` (standard `dnd_test`), aldri `DB_NAME`.
-- **Lokal innlogging uten Google:** `/api/auth/dev-login` når `DEV_LOGIN_EMAIL` er satt.
-- **API-kontrakten** mellom web og server ligger i `packages/shared`. Endres den, må begge sider følge med. Skrivende kall krever `X-Requested-With: dnd`.
-- **Repoet er offentlig:** aldri hemmeligheter, `.env`-innhold eller ekte D&D Beyond-ID-er i filer, logger eller commits.
-- **Utrulling:** push til `main` ruller ut via GitHub Actions. Stegene på serveren står i `deploy/README.md`.
+## Regler for workers og token-hygiene
 
-## Arbeidsmåte (gjelder alt arbeid i prosjektet)
-
-1. **Del opp i workers.** Hovedagenten planlegger og deler oppgaven i avgrensede deler med tydelige grenser (hvilke mapper og filer hver del eier, og hvilke navn, skript og miljøvariabler de deler). Hver del gjøres av en egen worker (subagent).
-2. **Velg modell etter oppgaven.** Opus for vanskelig logikk, sikkerhet (innlogging, sesjoner), regelmotoren og design. Sonnet for oppsett, konfigurasjon, utrulling og rutinekode. Haiku for enkle, mekaniske endringer.
-3. **Uavhengig test.** Når arbeidet er gjort, går en annen worker, som ikke skrev koden, gjennom det mot planen og kjører lint, typecheck, test, build og en ekte kjøring. Funn rettes og testes på nytt.
-4. **Først da** kan hovedagenten si at noe er klart for commit. Ikke commit eller push uten at brukeren ber om det.
-
-## Tråder og overlevering
-
-- **Én tråd per fase.** Store faser deles: 2a regelmotoren (`deriveCharacter`), 2b spill, ark og følgesvenner, 3a kataloger og `turReducer`, 3b kampskjermene og synk. Feilretting og nye ønsker får egne, korte tråder.
-- **Status ligger i repoet, ikke i chatten.** Ny tråd leser `CLAUDE.md`, `docs/UTVIKLINGSPLAN.md` og `docs/AVKLARINGER.md`, lager en kort plan og venter på godkjenning.
-- **Når en fase er ferdig:** kryss av i kapittel 10 i `UTVIKLINGSPLAN.md`, oppdater «Status» i `AVKLARINGER.md`, og før inn nye beslutninger der. Så commit når brukeren ber om det, slik at neste tråd starter på en ren tilstand.
-- **Bare én tråd endrer filer om gangen.** Skal noe gjøres parallelt, får den andre tråden sin egen worktree.
+1. **Én tråd/worktree per oppgave:** Bare én tråd endrer filer om gangen[cite: 1]. Bruk egne worktrees ved parallelt arbeid[cite: 1].
+2. **Korte svar & Diffs:** Svar så kort som mulig. Returner kodedifferanser framfor å skrive om hele filer uoppfordret. Ikke print lange test-utskrifter til chatten; referer til filnavn og linjenummer.
+3. **Kontekstnullstilling:** Kjør `/compact` eller be hovedagenten om ny tråd så snart en isolert sub-oppgave er ferdig.
+4. **Status & Commit:** Oppdater `UTVIKLINGSPLAN.md` og `AVKLARINGER.md` når en fase er ferdig[cite: 1]. Ikke commit eller push uten eksplisitt tillatelse fra brukeren[cite: 1].
