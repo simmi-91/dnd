@@ -1,0 +1,36 @@
+# Kopi av nginx-oppsettet for dnd.3lin.no.
+# Den virkelige filen ligger på serveren i /etc/nginx/sites-available/dnd.3lin.no
+# (lenket til sites-enabled). Endringer her gjelder ikke før filen kopieres dit.
+#
+# Alt går til Node (Fastify), som også serverer den bygde nettsiden fra WEB_DIR.
+# TLS-blokken (listen 443, ssl_certificate ...) legges til av certbot:
+#   sudo certbot --nginx -d dnd.3lin.no
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name dnd.3lin.no;
+
+    # Opplasting av bilder/kart: større body og lang timeout
+    location /api/upload {
+        client_max_body_size 20m;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+
+        proxy_pass http://127.0.0.1:8032;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:8032;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

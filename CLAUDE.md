@@ -10,6 +10,17 @@ Kampguide og kampanjebok for D&D 5e (2024-reglene). Brukes på mobil og laptop v
 - Utrulling, Node-kjøring og Google-innlogging skal følge mønsteret i brukerens andre prosjekter i WSL.
 - Utviklingen skjer mot en lokal MySQL i Docker. WSL har ikke tilgang til produksjonsserveren. Serverkonfigurasjon lages som filer i `deploy/`, og brukeren installerer dem selv.
 
+## Kommandoer og konvensjoner
+
+- **Node:** Node og npm kjøres alltid inne i WSL. Node kommer fra nvm og krever en interaktiv shell, så fra Windows: `wsl.exe -d Ubuntu-24.04 -- bash -ic 'cd ~/_server_/dnd && <kommando>'`. Node 22 (`.nvmrc`).
+- **Skript fra rota:** `npm run dev` (server på 8032, Vite på 5173), `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npx prettier --check .`, `npm run format`, `npm run migrate`. For én pakke: `-w @dnd/server`, `-w @dnd/web`, `-w @dnd/rules` eller `-w @dnd/shared`.
+- **Før noe er ferdig:** lint, typecheck, test, build og `prettier --check` skal være grønne.
+- **Miljø:** lokale variabler i `apps/server/.env` (aldri i git). `apps/server/.env.example` viser alle variablene. I produksjon: `/var/www/dnd/.env`. Serverens tester bruker `TEST_DB_NAME` (standard `dnd_test`), aldri `DB_NAME`.
+- **Lokal innlogging uten Google:** `/api/auth/dev-login` når `DEV_LOGIN_EMAIL` er satt.
+- **API-kontrakten** mellom web og server ligger i `packages/shared`. Endres den, må begge sider følge med. Skrivende kall krever `X-Requested-With: dnd`.
+- **Repoet er offentlig:** aldri hemmeligheter, `.env`-innhold eller ekte D&D Beyond-ID-er i filer, logger eller commits.
+- **Utrulling:** push til `main` ruller ut via GitHub Actions. Stegene på serveren står i `deploy/README.md`.
+
 ## Arbeidsmåte (gjelder alt arbeid i prosjektet)
 
 1. **Del opp i workers.** Hovedagenten planlegger og deler oppgaven i avgrensede deler med tydelige grenser (hvilke mapper og filer hver del eier, og hvilke navn, skript og miljøvariabler de deler). Hver del gjøres av en egen worker (subagent).

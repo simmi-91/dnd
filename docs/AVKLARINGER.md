@@ -42,11 +42,32 @@
 
 Se «Arbeidsmåte» i `CLAUDE.md`: workers per del med passende modell, uavhengig test av en annen worker, og ingen commit eller push uten at brukeren ber om det.
 
+## Beslutninger under fase 0 og 1
+
+- **Sesjoner:** `dd_auth_sessions` har et eget tall som `id` og `token_hash` (sha256 i hex, unik) som egen kolonne, i stedet for at hashen er `id`. `user_agent` er med. Sesjonen forlenges høyst én gang i døgnet.
+- **Kontokobling:** brukere finnes via Google `sub`. E-post kobles bare til en eksisterende bruker som kommer fra dev-login (`google_sub` begynner med `dev:`). Ellers svarer serveren 409 `account_conflict`.
+- **CSRF:** `X-Requested-With: dnd` kreves på alle skrivende metoder (POST, PUT, PATCH, DELETE), uansett sti. API-stier som ikke er skrevet nøyaktig som `/api/...`, for eksempel `/API` eller `/%61pi`, får JSON 404.
+- **`dd_`-vernet:** migreringene får et frosset `MigrationContext` med bare `createTable`, `alterTable`, `dropTable`, `createIndex` og `dropIndex`. En plugin med tillatelsesliste krever `dd_` på alle tabeller. Rå SQL er bare lov fra de faste `ddl`-hjelperne, og `setSchema` er nektet. Migreringer kan ikke endre data ennå. Trengs det, må konteksten utvides. Vernet hindrer feil, men ikke ondsinnet kode, og den reelle sikringen er en egen databasebruker (se `deploy/README.md` §10).
+- **Logger:** feil ved Google-verifisering logges som en fast kategori, aldri som meldingstekst eller token.
+- **Bygg og utrulling:** `apps/server/dist/` har `index.js`, `migrate.js` og en `package.json` med de eksterne avhengighetene. I CI lages serverens lockfil fra rot-lockfilen, og `deploy/check-lock.mjs` stopper utrullingen hvis versjonene avviker. Actions er festet til commit-SHA. Ved feil etter at mappene er byttet, rulles det tilbake. Migreringer rulles ikke tilbake, så de må være bakoverkompatible.
+- **Web:** menyen har bare «Mine spill» og «Konto». Valgene for et spill kommer i fase 2–4. Brytepunktet er 700 px, som i kapittel 8. `--dim` er `#6f604c` og `--nav-dim` er `#a8957a`, litt mørkere og lysere enn skissen, for å nå WCAG AA. Sentral håndtering i QueryClient: 401 sender til `/logg-inn`, og 403 `blocked` viser «Kontoen er sperret».
+- **Kysely 0.29:** `Migrator` og `Migration` importeres fra `kysely/migration`.
+
 ## Status
 
-- **Worker A (grunnoppsett) er ferdig og uavhengig testet.** Avhengighetene har faste versjoner, og `package-lock.json` er laget. `npm ci`, lint, typecheck, test, build og `prettier --check` går gjennom.
+- **Fase 0 og 1 er ferdige i kode og uavhengig testet** (4. november 2026).
+  - Lint, typecheck, test (135 tester), build og `prettier --check` går gjennom fra rent.
+  - Det er gjort en ekte kjøring i utvikling mot `development_db`, og en kjøring som i produksjon med `npm ci --omit=dev` og `WEB_DIR`.
+  - Deploy-skriptet er simulert med feil på hvert steg.
+  - Alle funn fra testene er rettet.
+- **Gjenstår før fase 1 er helt ferdig.** Brukeren må gjøre dette på serveren:
+  1. Lag en OAuth-klient i Google med origins `https://dnd.3lin.no` og `http://localhost:5173`, og legg `GOOGLE_CLIENT_ID` i `/var/www/dnd/.env` og i den lokale `apps/server/.env`.
+  2. Sett opp serveren etter `deploy/README.md`: mapper, `.env`, nginx og certbot, og pm2. Vurder en egen databasebruker (§10).
+  3. Legg inn secrets i GitHub: `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY` og `DEPLOY_RUN_AS_USER`.
+  4. Push til `main`, og se at utrullingen går gjennom. `actions/checkout` og `actions/setup-node` er festet til v7, som er nyere enn i de andre prosjektene.
+  5. Logg inn på `https://dnd.3lin.no` fra mobil og laptop. Google-flyten er ikke prøvd ende til ende, fordi det ikke finnes noen client ID lokalt.
+- **Kjent:**
+  - jsdom 30 krever Node ^22.22.2, men WSL har 22.21.1. Det virker, men oppdater med `nvm install 22`.
+  - `npm audit --omit=dev` gir 3 moderate funn via `@fastify/static` → `glob` → `minimatch`. Ikke bruk `audit fix --force`.
   - TypeScript står på 6.0.3, fordi typescript-eslint ennå ikke støtter 7.
-  - `@types/node` står på ^22, som `.nvmrc`.
-  - jsdom 30 krever Node ^22.22.2, men WSL har 22.21.1. Det virker foreløpig. Oppdater med `nvm install 22`.
-  - `npm audit --omit=dev` gir 3 moderate funn, alle via `@fastify/static` → `glob` → `minimatch`. Følg med på en ny versjon. Ikke bruk `audit fix --force`, som nedgraderer.
-- Neste steg: worker for `apps/server` (Opus for innlogging og sesjoner) og migreringer. `apps/server/build.mjs` er fortsatt en stubb som ikke lager `dist/`. Etter det kommer `apps/web`, så `deploy/` og CI.
+- **Neste fase:** 2a, regelmotoren (`deriveCharacter` i `packages/rules`), i en ny tråd.

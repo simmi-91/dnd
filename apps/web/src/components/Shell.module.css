@@ -1,0 +1,178 @@
+/* Mobil først: bunnmeny. Fra 700 px (planens brytepunkt for nettbrett og liten laptop) blir den en sidemeny. */
+
+.shell {
+  min-height: 100dvh;
+}
+
+.skip {
+  position: absolute;
+  left: 8px;
+  top: -100px;
+  z-index: 20;
+  padding: 10px 16px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: var(--radius);
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+
+.skip:focus {
+  top: 8px;
+}
+
+.main {
+  padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+}
+
+.main:focus {
+  outline: none;
+}
+
+.nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  background: var(--ink);
+  color: var(--nav-text);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.brand {
+  display: none;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  height: var(--bottom-nav-h);
+}
+
+.list li {
+  flex: 1;
+  display: flex;
+}
+
+.link {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: var(--touch);
+  color: var(--nav-text);
+  text-decoration: none;
+  font: 600 0.75rem/1.1 var(--font-heading);
+  letter-spacing: 0.06em;
+}
+
+.link:hover {
+  color: var(--paper);
+}
+
+.link:focus-visible {
+  outline: 3px solid var(--nav-active);
+  outline-offset: -3px;
+}
+
+.active,
+.active:hover {
+  color: var(--nav-active);
+}
+
+.icon {
+  display: flex;
+  line-height: 0;
+}
+
+/* Skjult på mobil, men fortsatt lenkens navn for skjermlesere. */
+.labelLong {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (min-width: 700px) {
+  .shell {
+    display: grid;
+    grid-template-columns: var(--side-nav-w) 1fr;
+  }
+
+  .main {
+    padding-bottom: 0;
+    min-width: 0;
+  }
+
+  .nav {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    padding: 24px 0;
+    overflow-y: auto;
+  }
+
+  .brand {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 22px 22px;
+  }
+
+  .brandTitle {
+    font: 700 1.25rem/1.2 var(--font-heading);
+    color: var(--nav-active);
+    letter-spacing: 0.04em;
+  }
+
+  .brandUser {
+    font-style: italic;
+    color: var(--nav-dim);
+  }
+
+  .list {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .link {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 10px 22px;
+    border-left: 3px solid transparent;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+  }
+
+  .active {
+    background: var(--ink-raised);
+    border-left-color: var(--nav-active);
+  }
+
+  .labelLong {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+  }
+
+  .labelShort {
+    display: none;
+  }
+}
+
+@media (min-width: 1100px) {
+  .shell {
+    --side-nav-w: 230px;
+  }
+}

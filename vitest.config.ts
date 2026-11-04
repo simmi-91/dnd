@@ -9,6 +9,11 @@ export default defineConfig({
           root: 'apps/server',
           environment: 'node',
           include: ['**/*.test.{ts,tsx}'],
+          exclude: ['**/node_modules/**', '**/dist/**'],
+          // Testene deler én ekte testdatabase (TEST_DB_NAME), så filene kjøres etter hverandre.
+          fileParallelism: false,
+          testTimeout: 20_000,
+          hookTimeout: 30_000,
         },
       },
       {

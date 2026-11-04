@@ -1,0 +1,279 @@
+/*
+ * Pergament (variant B i docs/design/). Alle farger ligger i variabler, slik at et
+ * mørkt «nattpergament»-tema kan legges på senere.
+ */
+:root {
+  --bg: #f3ead8;
+  --card: #fbf6ea;
+  --paper: #fffaf0;
+  --line: #d8c7a5;
+  --line-soft: #e6d8bb;
+  --ink: #2b2118;
+  --ink-raised: #3d2f22;
+  /* Litt mørkere enn #7a6a55 i skissen, så dempet tekst holder WCAG AA (4,5:1) også på --bg. */
+  --dim: #6f604c;
+  --accent: #7a1f1a;
+  --accent-ink: #fbf6ea;
+  --gold: #a8894f;
+  --done: #b8a57f;
+  --nav-text: #d8c7a5;
+  /* Gruppetittel i menyen. Skissen har #8a7a62, som er for svak på --ink. */
+  --nav-dim: #a8957a;
+  --nav-active: #f3c56b;
+  --person: #3e6b4a;
+  --place: #2f5578;
+  --bonus: #a8741a;
+  --psychic: #6b3f8f;
+  --miss: #b2452c;
+
+  --font-heading: 'Cinzel', 'Times New Roman', serif;
+  --font-body: 'EB Garamond', Garamond, Georgia, serif;
+
+  --radius: 6px;
+  --touch: 44px;
+  --bottom-nav-h: 64px;
+  --side-nav-w: 200px;
+  --focus: 3px solid var(--accent);
+
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 17px/1.5 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  margin: 0;
+}
+
+h1 {
+  font-size: 1.6rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--accent);
+}
+
+:focus-visible {
+  outline: var(--focus);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- Byggeklosser fra skissen ---------- */
+
+.sc {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.dim {
+  color: var(--dim);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: 0 1px 0 var(--line-soft);
+}
+
+.card--dashed {
+  border-style: dashed;
+  background: transparent;
+  box-shadow: none;
+}
+
+.rule {
+  height: 1px;
+  border: 0;
+  margin: 10px 0;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--touch);
+  padding: 10px 22px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: 700 0.875rem/1.2 var(--font-heading);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.btn:hover {
+  background: #5f1714;
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--accent);
+}
+
+.btn--ghost:hover {
+  background: var(--paper);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page__head {
+  text-align: center;
+}
+
+.page__head .sc {
+  margin-bottom: 4px;
+}
+
+@media (min-width: 700px) {
+  .page {
+    padding: 40px 48px;
+    gap: 22px;
+  }
+
+  .page__head {
+    text-align: left;
+  }
+
+  h1 {
+    font-size: 2.1rem;
+  }
+}
+
+/* ---------- Tilstander ---------- */
+
+.state {
+  max-width: 28rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.state--center {
+  min-height: 60dvh;
+  justify-content: center;
+  padding: 24px 18px;
+}
+
+.state__ornament {
+  font: 700 2.5rem/1 var(--font-heading);
+  color: var(--gold);
+}
+
+.alert {
+  border: 1px solid var(--miss);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 10px 14px;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid var(--line);
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .spinner {
+    animation: none;
+    border-top-color: var(--line);
+    background: radial-gradient(circle, var(--accent) 0 4px, transparent 5px);
+  }
+}

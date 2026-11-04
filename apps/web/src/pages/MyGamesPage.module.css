@@ -1,0 +1,24 @@
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 20px;
+  text-align: center;
+}
+
+.empty p {
+  max-width: 30rem;
+}
+
+.ornament {
+  font: 700 2.5rem/1 var(--font-heading);
+  color: var(--gold);
+}
+
+@media (min-width: 700px) {
+  .empty {
+    max-width: 34rem;
+    align-self: flex-start;
+  }
+}

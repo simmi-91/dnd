@@ -34,7 +34,7 @@ Siden skal fungere like godt på mobil (én hånd ved bordet) og laptop (mer pla
 | Design | Variant B «Pergament»: lyst pergament, Cinzel + EB Garamond, mørk rød. Bunnmeny på mobil, sidemeny på laptop. Turen vises som nummererte steg |
 | Teknologi | Node, React, TypeScript, MySQL. Innlogging med Google-konto |
 | Database | **Ingen ny database.** Tabeller i den eksisterende databasen, alle med prefiks `dd_` |
-| Hosting | LEMP-server, eget subdomene (f.eks. `dnd.<domene>`). Node finnes på serveren. Nginx foran Node |
+| Hosting | LEMP-server, eget subdomene (`dnd.3lin.no`). Node finnes på serveren. Nginx foran Node |
 | Utvikling og utrulling | Lokalt i WSL. GitHub Actions ruller ut til serveren |
 | Brukere | Bare Elin nå, men datamodellen skal tåle flere brukere |
 | Spill | Flere spill (kampanjer) per bruker, f.eks. «Icewind Dale» med Elowen og et tidligere «Lego-eventyr» med en annen karakter. Hvert spill har én tilkoblet D&D Beyond-karakter og sin egen kampanjebok |
@@ -51,18 +51,18 @@ Siden skal fungere like godt på mobil (én hånd ved bordet) og laptop (mer pla
 
 Finn svarene i de andre prosjektene. Det som ikke står der, samler du i **én** liste med spørsmål til brukeren.
 
-- [ ] Hvordan den lokale Docker-databasen startes, og hvilken database, bruker og port de andre prosjektene bruker (fra docker-compose og `.env.example`).
-- [ ] MySQL- eller MariaDB-versjon. Les den lokalt fra Docker-imaget. Spør brukeren om produksjonen har samme versjon. Er JSON-kolonner og FULLTEXT på InnoDB tilgjengelig?
-- [ ] Hvordan eksisterende GitHub Actions-workflows ruller ut: ssh + rsync, git pull på serveren, secrets-navn, stier på serveren. **Gjør likt som i de andre prosjektene.**
-- [ ] Hvordan andre Node-apper kjøres på serveren (systemd, pm2 eller Docker), slik det kommer fram av workflows og skript. Gjør likt.
-- [ ] Hvordan Google-innlogging er løst i de andre prosjektene. Gjenbruk mønsteret hvis det passer med kapittel 6.
-- [ ] Node-versjon. Bruk den samme som i de andre prosjektene (`engines`, `.nvmrc`, workflow).
-- [ ] Navnet på subdomenet. Spør brukeren.
+- [x] Hvordan den lokale Docker-databasen startes, og hvilken database, bruker og port de andre prosjektene bruker (fra docker-compose og `.env.example`).
+- [x] MySQL- eller MariaDB-versjon. Les den lokalt fra Docker-imaget. Spør brukeren om produksjonen har samme versjon. Er JSON-kolonner og FULLTEXT på InnoDB tilgjengelig?
+- [x] Hvordan eksisterende GitHub Actions-workflows ruller ut: ssh + rsync, git pull på serveren, secrets-navn, stier på serveren. **Gjør likt som i de andre prosjektene.**
+- [x] Hvordan andre Node-apper kjøres på serveren (systemd, pm2 eller Docker), slik det kommer fram av workflows og skript. Gjør likt.
+- [x] Hvordan Google-innlogging er løst i de andre prosjektene. Gjenbruk mønsteret hvis det passer med kapittel 6.
+- [x] Node-versjon. Bruk den samme som i de andre prosjektene (`engines`, `.nvmrc`, workflow).
+- [x] Navnet på subdomenet. Spør brukeren.
 
 ## 3. Arkitektur
 
 ```
-mobil / laptop ──HTTPS──> nginx (dnd.<domene>)
+mobil / laptop ──HTTPS──> nginx (dnd.3lin.no)
                            ├─ /         → statiske filer fra web/dist (SPA, PWA)
                            └─ /api/*    → Node-server (127.0.0.1:<PORT>)
                                             ├─ MySQL (eksisterende DB, tabeller dd_*)
@@ -253,19 +253,19 @@ Overskrifter bruker Cinzel 600/700, brødtekst EB Garamond 400–600. Tall i kam
 Hver fase skal kunne rulles ut og brukes for seg.
 
 ### Fase 0 – Oppsett
-- [ ] npm workspaces, TypeScript strict, ESLint og Prettier, Vitest
-- [ ] Svar på punktene under «Må avklares» i kapittel 2
-- [ ] `CLAUDE.md` med kommandoer og konvensjoner
+- [x] npm workspaces, TypeScript strict, ESLint og Prettier, Vitest
+- [x] Svar på punktene under «Må avklares» i kapittel 2
+- [x] `CLAUDE.md` med kommandoer og konvensjoner
 
 **Ferdig når:** `npm run dev` starter web og server lokalt i WSL, og `npm test` kjører.
 
 ### Fase 1 – Grunnmur
-- [ ] Fastify-server, Kysely-migreringer for `dd_users`, `dd_auth_sessions` og `dd_migrations`
-- [ ] Google-innlogging med tillatte e-postadresser
-- [ ] Web-skall i pergamentstil: innlogging, tom «Mine spill», bunnmeny og sidemeny
-- [ ] Nginx, tjeneste og GitHub Actions-utrulling til subdomenet
+- [x] Fastify-server, Kysely-migreringer for `dd_users`, `dd_auth_sessions` og `dd_migrations`
+- [x] Google-innlogging, åpen for alle, med sperring (`blocked`). Se AVKLARINGER
+- [x] Web-skall i pergamentstil: innlogging, tom «Mine spill», bunnmeny og sidemeny
+- [x] Nginx, tjeneste og GitHub Actions-utrulling til subdomenet
 
-**Ferdig når:** Elin kan logge inn på `https://dnd.<domene>` fra både mobil og laptop, og en push til main ruller ut automatisk.
+**Ferdig når:** Elin kan logge inn på `https://dnd.3lin.no` fra både mobil og laptop, og en push til main ruller ut automatisk. *(Gjenstår: oppsett på serveren og første push. Se «Status» i AVKLARINGER.)*
 
 ### Fase 2 – Spill, karakter og ark
 - [ ] `packages/rules`: `deriveCharacter` i TypeScript med fixture-tester

@@ -1,0 +1,230 @@
+name: Deploy D&D
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# To utrullinger skal aldri kjøre samtidig
+concurrency:
+  group: deploy-dnd
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      DB_USER: root
+      DB_PASSWORD: root
+      TEST_DB_NAME: dnd_test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Prettier
+        run: npx prettier --check .
+
+      - name: Test
+        run: npm test
+
+      # Et ødelagt bygg skal stoppe før deploy
+      - name: Build
+        run: npm run build
+
+  deploy:
+    needs: check
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Package client and server
+        run: |
+          set -euo pipefail
+          mkdir -p deploy-pkg
+          cp -r apps/web/dist deploy-pkg/client
+          cp -r apps/server/dist deploy-pkg/server
+          # Lockfil for serveren, laget ut fra rot-lockfilen så npm beholder de låste versjonene
+          cp package-lock.json deploy-pkg/server/package-lock.json
+          cd deploy-pkg/server
+          npm install --package-lock-only --omit=dev --ignore-scripts
+          cd ../..
+          # Feiler hvis en pakke har en annen versjon enn i rot-lockfilen
+          node deploy/check-lock.mjs deploy-pkg/server/package-lock.json package-lock.json
+          test -f deploy-pkg/server/index.js
+          test -f deploy-pkg/server/migrate.js
+          test -f deploy-pkg/server/package.json
+          test -f deploy-pkg/client/index.html
+
+      - name: Copy build to server
+        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345 # v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: 'deploy-pkg/client,deploy-pkg/server'
+          target: '/tmp/dnd-deploy-${{ github.run_id }}'
+          strip_components: 1
+          rm: true
+
+      - name: Execute deployment on server
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_RUN_AS_USER }}
+          TMP_DIR: /tmp/dnd-deploy-${{ github.run_id }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          envs: DEPLOY_USER,TMP_DIR
+          script: |
+            set -Eeuo pipefail
+
+            APP_DIR=/var/www/dnd
+            ENV_FILE=$APP_DIR/.env
+            PM2_NAME=dnd
+
+            test -f "$ENV_FILE" || { echo "Mangler $ENV_FILE. Lag den først (se deploy/README.md)."; exit 1; }
+            test -d "$TMP_DIR/server" && test -d "$TMP_DIR/client"
+
+            start_app() {
+              sudo -u "$DEPLOY_USER" pm2 restart "$PM2_NAME" \
+                || sudo -u "$DEPLOY_USER" pm2 start "$APP_DIR/server/index.js" --name "$PM2_NAME" \
+                  --cwd "$APP_DIR/server" --node-args="--env-file=$ENV_FILE"
+            }
+
+            # Rull tilbake til *_old. Databasemigreringer rulles ikke tilbake.
+            roll_back() {
+              trap - ERR
+              set +e
+              echo "Rolling back to previous version..."
+              cd "$APP_DIR"
+              if [ -d server_old ] || [ -d client_old ]; then
+                sudo -u "$DEPLOY_USER" pm2 stop "$PM2_NAME"
+                # Hver mappe for seg, så et avbrutt bytte også kan rulles tilbake
+                for d in server client; do
+                  if [ -d "${d}_old" ]; then
+                    sudo rm -rf "$d"
+                    sudo mv "${d}_old" "$d"
+                  fi
+                done
+                start_app
+                echo "Rollback complete."
+              else
+                echo "Ingen forrige versjon å rulle tilbake til (første utrulling)."
+                sudo -u "$DEPLOY_USER" pm2 stop "$PM2_NAME"
+              fi
+            }
+
+            on_error() {
+              echo "Deploy failed."
+              roll_back
+              exit 1
+            }
+
+            cd "$APP_DIR"
+
+            # Roter: behold *_old til helsesjekken er ok
+            sudo rm -rf server_old client_old
+
+            # Fra nå av rulles alt tilbake hvis et steg feiler, også midt i byttet
+            trap on_error ERR
+            if [ -d server ]; then sudo mv server server_old; fi
+            if [ -d client ]; then sudo mv client client_old; fi
+            sudo mv "$TMP_DIR/server" server
+            sudo mv "$TMP_DIR/client" client
+
+            # Rettigheter: serveren eies av kjøringsbrukeren, klienten er lesbar for alle
+            sudo chown -R "$DEPLOY_USER:$DEPLOY_USER" server
+            sudo chmod -R 755 server client
+
+            # Produksjonsavhengigheter (bygger native moduler for denne serveren)
+            cd server
+            sudo -u "$DEPLOY_USER" npm ci --omit=dev
+
+            # Migrering: etter at ny kode ligger på plass, før restart.
+            # Migreringer rulles IKKE tilbake ved rollback. Skriv dem bakoverkompatible.
+            echo "Running migrations..."
+            sudo -u "$DEPLOY_USER" node --env-file="$ENV_FILE" "$APP_DIR/server/migrate.js"
+
+            start_app
+
+            # Helsesjekk (ikke skriv appens logger til de offentlige Actions-loggene)
+            echo "Running health check..."
+            HEALTHY=false
+            for i in $(seq 1 10); do
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8032/api/health || true)
+              if [ "$STATUS" = "200" ]; then
+                HEALTHY=true
+                break
+              fi
+              echo "Attempt $i/10 - got ${STATUS:-000}, retrying in 5s..."
+              sleep 5
+            done
+
+            if [ "$HEALTHY" != "true" ]; then
+              echo "Health check failed. Se loggene på serveren: pm2 logs dnd"
+              on_error
+            fi
+
+            trap - ERR
+            # pm2 save skal ikke stoppe utrullingen
+            sudo -u "$DEPLOY_USER" pm2 save || echo "pm2 save feilet (ignorert)"
+            echo "Deploy successful."
+            sudo -u "$DEPLOY_USER" pm2 status || true
+
+      - name: Cleanup temp files on server
+        if: always()
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            sudo rm -rf "/tmp/dnd-deploy-${{ github.run_id }}"
