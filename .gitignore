@@ -1,0 +1,22 @@
+node_modules
+dist
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+coverage
+.DS_Store
+.claude/settings.local.json
+
+# Logger
+*.log
+npm-debug.log*
+
+# Editor og OS
+.vscode/
+.idea/
+Thumbs.db
+*:Zone.Identifier
+
+# Lokale opplastede bilder (IMAGE_DIR i utvikling)
+/img/

@@ -1,0 +1,29 @@
+{
+  "name": "@dnd/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file=.env src/index.ts",
+    "build": "node build.mjs",
+    "start": "node --env-file=.env dist/index.js",
+    "migrate": "tsx --env-file=.env src/db/migrate-cli.ts",
+    "migrate:prod": "node dist/migrate.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dnd/rules": "*",
+    "@dnd/shared": "*",
+    "@fastify/cookie": "^11.1.5",
+    "@fastify/static": "^10.1.8",
+    "fastify": "^5.12.8",
+    "google-auth-library": "^11.3.3",
+    "kysely": "^0.29.8",
+    "mysql2": "^3.24.6",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "tsx": "^4.23.15"
+  }
+}

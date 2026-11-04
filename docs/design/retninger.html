@@ -1,0 +1,199 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;700&family=Cinzel:wght@600;700&family=EB+Garamond:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+body{margin:0}
+.variant{margin:0 0 28px}
+.vhead{display:flex;gap:10px;align-items:baseline;margin:0 0 4px}
+.vletter{font:700 13px var(--font-sans);background:var(--primary);color:var(--primary-foreground);border-radius:6px;padding:2px 8px}
+.vtitle{font:600 17px var(--font-sans)}
+.vdesc{color:var(--muted-foreground);font-size:13px;margin:0 0 10px;line-height:1.45}
+.frames{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.cap{font-size:11px;color:var(--muted-foreground);margin-top:4px;text-align:center}
+.phone{width:248px;height:476px;border-radius:22px;border:3px solid #444a55;overflow:hidden;position:relative}
+.phone>.in{width:375px;height:720px;transform:scale(.66);transform-origin:0 0;position:absolute;top:0;left:0}
+.lap{width:430px;height:269px;border-radius:8px 8px 2px 2px;border:3px solid #444a55;overflow:hidden;position:relative}
+.lap>.in{width:1280px;height:800px;transform:scale(.3359);transform-origin:0 0;position:absolute;top:0;left:0}
+.base{width:450px;height:8px;background:#444a55;border-radius:0 0 8px 8px;margin-left:-10px}
+.in,.in *{box-sizing:border-box}
+
+/* ===== A: Natt-kampark ===== */
+.A{background:#0f1218;color:#e3e6ec;font:15px/1.45 "IBM Plex Sans",sans-serif}
+.A .h{font:700 24px "Spectral",serif}
+.A .dim{color:#8d93a3}.A .mono{font-family:"IBM Plex Mono",monospace}
+.A .card{background:#171b24;border:1px solid #2a3040;border-radius:12px;padding:12px 14px}
+.A .tabs{display:flex;gap:6px}
+.A .tab{flex:1;padding:8px 6px;border-radius:9px;background:#171b24;border:1px solid #2a3040;font-size:13px;text-align:center;color:#8d93a3}
+.A .tab.on{background:#23384f;border-color:#6aa3dc;color:#e3e6ec;font-weight:600}
+.A .chip{display:inline-block;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600}
+.A .act{background:#23384f;color:#6aa3dc}.A .ba{background:#332c1a;color:#d6aa58}.A .re{background:#183430;color:#5fcca7}.A .used{background:#222631;color:#5c6272;text-decoration:line-through}
+.A .opt{border:1px solid #2a3040;border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;background:#131720}
+.A .opt.blue{border-color:#6aa3dc}
+.A .opt.off{opacity:.4}
+.A .bar{height:8px;background:#2a3040;border-radius:4px;overflow:hidden}.A .bar i{display:block;height:100%;background:#5fcca7}
+.A .btn{background:#23384f;border:1px solid #6aa3dc;color:#6aa3dc;border-radius:10px;padding:12px;text-align:center;font-weight:600}
+.A .rec{font-size:10px;background:#332c1a;color:#d6aa58;padding:2px 6px;border-radius:5px;font-weight:700;letter-spacing:.05em}
+
+/* ===== B: Pergament ===== */
+.B{background:#f3ead8;color:#2b2118;font:16px/1.45 "EB Garamond",serif}
+.B .h{font:700 23px "Cinzel",serif;color:#7a1f1a;letter-spacing:.02em}
+.B .sc{font-family:"Cinzel",serif;font-size:12px;letter-spacing:.12em;color:#7a1f1a}
+.B .dim{color:#7a6a55}
+.B .card{background:#fbf6ea;border:1px solid #d8c7a5;border-radius:6px;padding:12px 14px;box-shadow:0 1px 0 #e6d8bb}
+.B .rule{height:1px;background:linear-gradient(90deg,transparent,#a8894f,transparent);margin:8px 0}
+.B .step{display:flex;gap:10px;align-items:flex-start}
+.B .num{width:26px;height:26px;border-radius:50%;background:#7a1f1a;color:#fbf6ea;font:700 14px "Cinzel",serif;display:flex;align-items:center;justify-content:center;flex:none}
+.B .num.done{background:#b8a57f}
+.B .pill{display:inline-block;border:1px solid #a8894f;border-radius:20px;padding:3px 10px;font-size:14px;margin:3px 4px 0 0;background:#fffaf0}
+.B .pill.on{background:#7a1f1a;color:#fbf6ea;border-color:#7a1f1a}
+.B .pill.off{opacity:.4;text-decoration:line-through}
+.B .nav{position:absolute;bottom:0;left:0;right:0;height:64px;background:#2b2118;display:flex;color:#d8c7a5;font:600 11px "Cinzel",serif;letter-spacing:.06em}
+.B .nav div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.B .nav .on{color:#f3c56b}
+.B .ic{font-size:20px;font-family:sans-serif}
+.B .side{background:#2b2118;color:#d8c7a5;font:600 14px "Cinzel",serif;letter-spacing:.05em}
+.B .side .on{color:#f3c56b;background:#3d2f22;border-left:3px solid #f3c56b}
+
+/* ===== C: Rune-HUD ===== */
+.C{background:#0b0d12;color:#f1f3f7;font:15px/1.4 "Inter",sans-serif}
+.C .h{font:800 22px "Inter",sans-serif;letter-spacing:-.01em}
+.C .dim{color:#7f8698}
+.C .tok{flex:1;border-radius:14px;padding:10px 4px;text-align:center;font-weight:800;font-size:13px;border:2px solid}
+.C .tok b{display:block;font-size:22px}
+.C .tA{border-color:#4f8cff;color:#4f8cff;background:#0f1a33}
+.C .tB{border-color:#ffb23f;color:#ffb23f;background:#2a1e08}
+.C .tR{border-color:#2fd39a;color:#2fd39a;background:#0a261c}
+.C .tM{border-color:#b98cff;color:#b98cff;background:#1d1433}
+.C .tok.spent{border-color:#2a2f3a;color:#3d4350;background:#12151b}
+.C .big{border-radius:16px;padding:14px;font-weight:700;font-size:16px;display:flex;flex-direction:column;gap:2px;min-height:78px;justify-content:center}
+.C .big small{font-weight:500;font-size:12px;opacity:.75}
+.C .gA{background:#16244a;border:1px solid #4f8cff}
+.C .gX{background:#171a21;border:1px solid #262b36;color:#4a505d}
+.C .d20{display:flex;gap:8px;align-items:center;background:#171a21;border:1px solid #262b36;border-radius:16px;padding:10px}
+.C .key{flex:1;background:#232836;border-radius:10px;text-align:center;padding:10px 0;font-weight:700}
+.C .ini{display:flex;gap:6px}
+.C .p{border-radius:12px;background:#171a21;border:1px solid #262b36;padding:6px 10px;font-size:13px;font-weight:600}
+.C .p.on{background:#4f8cff;color:#0b0d12;border-color:#4f8cff}
+.C .panel{background:#12151c;border:1px solid #232836;border-radius:16px;padding:14px}
+</style></head><body>
+
+<!-- ================= A ================= -->
+<div class="variant">
+ <div class="vhead"><span class="vletter">A</span><span class="vtitle">Natt-kampark — videreutvikling av dagens app</span></div>
+ <p class="vdesc">Mørkt, rolig og tett på prototypen du kjenner. Faner per deltaker øverst på mobil. På laptop blir det tre kolonner: initiativrekkefølge · din tur · ark/notater side om side.</p>
+ <div class="frames">
+  <div><div class="phone"><div class="in A" style="padding:16px;display:flex;flex-direction:column;gap:10px">
+   <div style="display:flex;justify-content:space-between;align-items:center"><div><div class="h">Elowen</div><div class="dim" style="font-size:13px">Gloom Stalker · nivå 4</div></div><div style="text-align:right"><div class="mono" style="font-size:13px">Runde 2</div><div style="font-size:12px;color:#e5806a">Avslutt kamp</div></div></div>
+   <div class="card" style="padding:10px 12px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>HP <b class="mono">31</b>/40</span><span>AC <b>14</b></span><span>Init <b>+6</b></span><span>35 ft</span></div><div class="bar" style="margin-top:6px"><i style="width:77%"></i></div></div>
+   <div class="tabs"><div class="tab on">Elowen 19</div><div class="tab">Kvitebjørn 14</div><div class="tab">Salomon 14</div><div class="tab">Ugle 8</div></div>
+   <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip act">Action</span><span class="chip used">Bonus action</span><span class="chip re">Reaction</span><span class="chip" style="background:#29243e;color:#a597d0">Bevegelse 35 ft</span></div>
+   <div class="card" style="display:flex;flex-direction:column;gap:8px">
+    <div style="font:700 16px Spectral,serif">Action</div>
+    <div class="opt blue"><div><b>Angrip · Longbow</b><div class="dim" style="font-size:12px">+7 treff · 1d8+3 · Slow</div></div><span class="rec">ANBEFALT</span></div>
+    <div class="opt"><div><b>Dash</b><div class="dim" style="font-size:12px">+35 ft bevegelse</div></div></div>
+    <div class="opt"><div><b>Hide</b><div class="dim" style="font-size:12px">Stealth mot DC 15 → advantage</div></div></div>
+   </div>
+   <div class="card" style="display:flex;flex-direction:column;gap:8px">
+    <div style="font:700 16px Spectral,serif;color:#d6aa58">Bonus action</div>
+    <div class="opt off"><div><b>Hunter's Mark</b><div class="dim" style="font-size:12px">Bonus action er brukt denne turen</div></div></div>
+   </div>
+   <div class="btn">Ferdig → Kvitebjørn</div>
+  </div></div><div class="cap">Mobil</div></div>
+  <div><div class="lap"><div class="in A" style="padding:22px;display:grid;grid-template-columns:260px 1fr 380px;gap:18px">
+   <div style="display:flex;flex-direction:column;gap:10px">
+    <div class="h">Kamp · Runde 2</div>
+    <div class="opt blue" style="background:#23384f"><b>19 · Elowen</b><span class="mono">31/40</span></div>
+    <div class="opt"><span>14 · Kvitebjørn</span><span class="mono">34/42</span></div>
+    <div class="opt"><span>14 · Salomon</span><span class="mono">42/42</span></div>
+    <div class="opt"><span>8 · Ugle</span><span class="mono">1/1</span></div>
+    <div class="opt" style="border-style:dashed"><span class="dim">+ Fiende / NPC</span></div>
+    <div class="card" style="margin-top:auto"><div class="dim" style="font-size:12px">KAMPLOGG</div><div style="font-size:13px">Longbow 18 → traff · 9 piercing<br>Hunter's Mark · 4 force</div></div>
+   </div>
+   <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px"><span class="chip act">Action</span><span class="chip used">Bonus action</span><span class="chip re">Reaction</span><span class="chip" style="background:#29243e;color:#a597d0">Bevegelse 35 ft</span></div>
+    <div class="card" style="display:flex;flex-direction:column;gap:10px"><div style="font:700 20px Spectral,serif">Angrep · Longbow</div>
+     <div class="dim">Du har advantage (Umbral Sight i mørket). Rull 2d20 og skriv inn den høyeste.</div>
+     <div style="display:flex;gap:10px;align-items:center"><div class="card mono" style="font-size:28px;padding:8px 22px">17</div><span style="font-size:22px">+7 = <b class="mono">24</b></span></div>
+     <div style="background:#183430;color:#5fcca7;border-radius:10px;padding:10px">Si til DM: «Jeg skyter med longbow, 24 for å treffe.»</div>
+     <div style="display:flex;gap:10px"><div class="btn" style="flex:1;border-color:#5fcca7;color:#5fcca7;background:#183430">Traff</div><div class="btn" style="flex:1;border-color:#e5806a;color:#e5806a;background:#3a231f">Bom</div></div>
+    </div>
+    <div class="card"><div style="font:700 16px Spectral,serif">Andre valg</div><div class="dim">Dash · Dodge · Disengage · Hide</div></div>
+   </div>
+   <div style="display:flex;flex-direction:column;gap:12px">
+    <div class="tabs"><div class="tab">Ark</div><div class="tab on">Notater</div><div class="tab">Bjørner</div></div>
+    <div class="card"><div class="dim" style="font-size:12px">QUEST · aktiv</div><b>Finn den savnede karavanen</b><div class="dim" style="font-size:13px">Fra: Brann Holt i Eldmark. Sist sett ved Grålia-vadet.</div></div>
+    <div class="card"><div class="dim" style="font-size:12px">PERSON</div><b>Brann Holt</b><div class="dim" style="font-size:13px">Kjøpmann. Lovte 200 gp. Virker nervøs.</div></div>
+    <div class="card"><div class="dim" style="font-size:12px">STED</div><b>Eldmark</b><div class="dim" style="font-size:13px">Liten by ved elva. Kro: Den Sorte Gjedde.</div></div>
+    <div class="opt" style="border-style:dashed"><span class="dim">+ Raskt notat…</span></div>
+   </div>
+  </div></div><div class="base"></div><div class="cap">Laptop</div></div>
+ </div>
+</div>
+
+<!-- ================= B ================= -->
+<div class="variant">
+ <div class="vhead"><span class="vletter">B</span><span class="vtitle">Pergament — lyst, eventyrbok-preg</span></div>
+ <p class="vdesc">Varmt og stemningsfullt. Turen vises som nummererte steg (bevegelse → bonus action → action), så du leser deg nedover. Bunnmeny på mobil, sidemeny på laptop med Kamp, Ark, Følgesvenner og Kampanjebok.</p>
+ <div class="frames">
+  <div><div class="phone"><div class="in B" style="padding:18px 18px 80px;display:flex;flex-direction:column;gap:10px">
+   <div style="text-align:center"><div class="sc">Runde II · din tur</div><div class="h">Elowen Windstrider</div><div class="dim" style="font-style:italic">31 / 40 HP · AC 14 · 35 ft</div></div>
+   <div class="rule"></div>
+   <div class="card step"><div class="num done">1</div><div><b>Bevegelse</b><div class="dim">20 av 35 ft igjen</div></div></div>
+   <div class="card step"><div class="num">2</div><div><b>Bonus action</b><div><span class="pill on">Hunter's Mark</span><span class="pill">Flytt mark</span></div><div class="dim" style="font-size:14px;margin-top:4px;font-style:italic">Anbefalt: legg merket før du skyter.</div></div></div>
+   <div class="card step"><div class="num">3</div><div><b>Action</b><div><span class="pill">Angrip</span><span class="pill">Dash</span><span class="pill">Dodge</span><span class="pill">Hide</span><span class="pill off">Disengage</span></div></div></div>
+   <div class="card step"><div class="num" style="background:#3e6b4a">R</div><div><b>Reaction</b><div class="dim">Ledig · Opportunity Attack</div></div></div>
+   <div style="text-align:center;font:700 14px Cinzel,serif;color:#fbf6ea;background:#7a1f1a;border-radius:6px;padding:12px">Avslutt tur → Kvitebjørn</div>
+   <div class="nav"><div class="on"><span class="ic">⚔</span>Kamp</div><div><span class="ic">📜</span>Ark</div><div><span class="ic">🐾</span>Følge</div><div><span class="ic">📖</span>Bok</div></div>
+  </div></div><div class="cap">Mobil</div></div>
+  <div><div class="lap"><div class="in B" style="display:grid;grid-template-columns:230px 1fr">
+   <div class="side" style="display:flex;flex-direction:column;padding-top:24px">
+    <div style="padding:0 22px 22px;font-size:20px;color:#f3c56b">Elowen</div>
+    <div class="on" style="padding:12px 22px">⚔ Kamp</div><div style="padding:12px 22px">📜 Ark</div><div style="padding:12px 22px">🐾 Følgesvenner</div>
+    <div style="padding:22px 22px 6px;font-size:11px;color:#8a7a62">KAMPANJEBOK</div>
+    <div style="padding:8px 22px">Quester</div><div style="padding:8px 22px">Personer</div><div style="padding:8px 22px">Steder</div><div style="padding:8px 22px">Øktlogg</div>
+   </div>
+   <div style="padding:26px 30px;display:grid;grid-template-columns:1fr 1fr;gap:20px;align-content:start">
+    <div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:end"><div><div class="sc">Runde II</div><div class="h" style="font-size:30px">Din tur</div></div><div style="display:flex;gap:8px"><span class="pill on">19 Elowen</span><span class="pill">14 Kvitebjørn</span><span class="pill">14 Salomon</span><span class="pill">8 Ugle</span></div></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+     <div class="card step"><div class="num done">1</div><div><b>Bevegelse</b><div class="dim">20 av 35 ft igjen</div></div></div>
+     <div class="card step"><div class="num">2</div><div><b>Bonus action</b><div><span class="pill on">Hunter's Mark</span><span class="pill">Flytt mark</span></div></div></div>
+     <div class="card step"><div class="num">3</div><div><b>Action</b><div><span class="pill">Angrip</span><span class="pill">Dash</span><span class="pill">Dodge</span><span class="pill">Hide</span></div></div></div>
+    </div>
+    <div class="card"><div class="sc">Hunter's Mark</div><div class="rule"></div><p style="margin:0">Bruker gratis-kast (1 av 2 igjen). Krever konsentrasjon. +1d6 force per treff.</p><div class="rule"></div><div style="font-style:italic">Si til DM: «Jeg bruker bonus action på Hunter's Mark på orken.»</div><div style="margin-top:12px;text-align:center;font:700 14px Cinzel,serif;color:#fbf6ea;background:#7a1f1a;border-radius:6px;padding:10px">Bekreft</div></div>
+   </div>
+  </div></div><div class="base"></div><div class="cap">Laptop</div></div>
+ </div>
+</div>
+
+<!-- ================= C ================= -->
+<div class="variant">
+ <div class="vhead"><span class="vletter">C</span><span class="vtitle">Rune-HUD — store knapper, spill-aktig</span></div>
+ <p class="vdesc">Laget for tommel og rask lesing. Action, bonus action, reaction og bevegelse er fire store «brikker» som slukkes når de er brukt. Store valgknapper og eget terningfelt. Laptop blir et dashbord med kamp, logg og hurtignotater.</p>
+ <div class="frames">
+  <div><div class="phone"><div class="in C" style="padding:16px;display:flex;flex-direction:column;gap:12px">
+   <div style="display:flex;justify-content:space-between;align-items:center"><div class="h">Elowen</div><div class="dim" style="font-weight:700">R2 · 31/40 HP</div></div>
+   <div class="ini"><span class="p on">19 Elowen</span><span class="p">14 Kvite</span><span class="p">14 Salomon</span><span class="p">8 Ugle</span></div>
+   <div style="display:flex;gap:8px"><div class="tok tA"><b>A</b>Action</div><div class="tok tB spent"><b>B</b>Bonus</div><div class="tok tR"><b>R</b>React</div><div class="tok tM"><b>20</b>ft</div></div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div class="big gA">Longbow<small>+7 · 1d8+3 · Slow</small></div>
+    <div class="big gA">Scimitar<small>+5 · 1d6+3 · Nick</small></div>
+    <div class="big gX">Hunter's Mark<small>Bonus brukt</small></div>
+    <div class="big gA">Hide<small>DC 15 → adv.</small></div>
+    <div class="big gA">Dash<small>+35 ft</small></div>
+    <div class="big gA">Dodge<small>Disadv. mot deg</small></div>
+   </div>
+   <div class="d20"><div style="font-weight:800;color:#4f8cff;padding:0 6px">d20</div><div class="key">17</div><div class="key" style="background:#4f8cff;color:#0b0d12">= 24</div></div>
+   <div style="background:#2fd39a;color:#0b0d12;border-radius:14px;text-align:center;padding:14px;font-weight:800">Ferdig → Kvitebjørn</div>
+  </div></div><div class="cap">Mobil</div></div>
+  <div><div class="lap"><div class="in C" style="padding:22px;display:grid;grid-template-columns:1fr 1fr 340px;grid-template-rows:auto auto 1fr;gap:16px">
+   <div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center"><div class="ini"><span class="p on">19 Elowen 31/40</span><span class="p">14 Kvitebjørn 34/42</span><span class="p">14 Salomon 42/42</span><span class="p">8 Ugle</span><span class="p" style="border-style:dashed">+ Fiende</span></div><div class="h">Runde 2</div></div>
+   <div style="grid-column:1/3;display:flex;gap:12px"><div class="tok tA"><b>A</b>Action</div><div class="tok tB spent"><b>B</b>Bonus</div><div class="tok tR"><b>R</b>Reaction</div><div class="tok tM"><b>20 ft</b>Bevegelse</div></div>
+   <div class="panel" style="grid-column:3;grid-row:2/4"><div style="font-weight:800;margin-bottom:8px">Hurtignotat</div><div style="background:#171a21;border-radius:10px;padding:10px;color:#7f8698">Orken nevnte «Den Røde Hånd»…</div><div style="margin-top:14px;font-weight:800">Aktive quester</div><div style="margin-top:6px">◆ Finn den savnede karavanen</div><div>◆ Levere brevet til Eldmark</div><div style="margin-top:14px;font-weight:800">Logg</div><div class="dim" style="font-size:13px">Longbow 24 → traff · 9 + 4 force</div></div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:start">
+    <div class="big gA">Longbow<small>+7 · 1d8+3 · Slow</small></div><div class="big gA">Scimitar<small>+5 · 1d6+3 · Nick</small></div>
+    <div class="big gX">Hunter's Mark<small>Bonus brukt</small></div><div class="big gA">Hide<small>DC 15</small></div>
+   </div>
+   <div class="panel" style="align-self:start"><div class="dim" style="font-weight:700">ANGREP · LONGBOW</div><div style="font-size:40px;font-weight:800">17 <span style="color:#4f8cff">+7 = 24</span></div><div style="background:#0a261c;color:#2fd39a;border-radius:10px;padding:10px;margin:8px 0">«Longbow, 24 for å treffe.»</div><div style="display:flex;gap:10px"><div class="key" style="background:#2fd39a;color:#0b0d12">Traff</div><div class="key" style="background:#ff6b5b;color:#0b0d12">Bom</div></div></div>
+  </div></div><div class="base"></div><div class="cap">Laptop</div></div>
+ </div>
+</div>
+</body></html>
