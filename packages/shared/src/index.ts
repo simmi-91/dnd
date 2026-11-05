@@ -50,3 +50,5 @@ export const REQUESTED_WITH_VALUE = 'dnd';
 
 /** Navnet på sesjonsinformasjonskapselen. */
 export const SESSION_COOKIE = 'dd_session';
+
+export * from './games.ts';

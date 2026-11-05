@@ -91,6 +91,28 @@ describe('migreringer', () => {
     expect(fks).toContainEqual({ table: 'dd_auth_sessions', ref: 'dd_users' });
   });
 
+  it('0002 lager dd_characters, dd_games og dd_game_state med nøkler', async () => {
+    expect(await tableNames()).toEqual(
+      expect.arrayContaining(['dd_characters', 'dd_games', 'dd_game_state']),
+    );
+    const { rows: uniques } = await sql<{ column: string }>`
+      SELECT COLUMN_NAME AS \`column\` FROM information_schema.statistics
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dd_characters' AND NON_UNIQUE = 0
+        AND INDEX_NAME = 'dd_characters_user_ddb_unique' ORDER BY SEQ_IN_INDEX`.execute(db);
+    expect(uniques.map((r) => r.column)).toEqual(['user_id', 'ddb_id']);
+    const { rows: fks } = await sql<{ table: string; ref: string }>`
+      SELECT TABLE_NAME AS \`table\`, REFERENCED_TABLE_NAME AS ref FROM information_schema.key_column_usage
+      WHERE TABLE_SCHEMA = DATABASE() AND REFERENCED_TABLE_NAME IS NOT NULL`.execute(db);
+    expect(fks).toEqual(
+      expect.arrayContaining([
+        { table: 'dd_characters', ref: 'dd_users' },
+        { table: 'dd_games', ref: 'dd_users' },
+        { table: 'dd_games', ref: 'dd_characters' },
+        { table: 'dd_game_state', ref: 'dd_games' },
+      ]),
+    );
+  });
+
   it('gjør ingenting når alt er migrert', async () => {
     const result = await migrateToLatest(db);
     expect(result.results).toEqual([]);

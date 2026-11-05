@@ -29,4 +29,26 @@ export { companionInitiativeBonus } from './companions.ts';
 export type { Companion } from './companions.ts';
 export { initialGameState, mergeOnRefresh, newFeatures } from './import.ts';
 export type { GameState, MergeOptions, PetState } from './import.ts';
+export {
+  applyDamage,
+  applyHealing,
+  concentrationDc,
+  currentHp,
+  damageCompanion,
+  damagePet,
+  healCompanion,
+  healPet,
+  hitDiceHealing,
+  hitDiceLeft,
+  longRest,
+  petHpMax,
+  restoreResource,
+  restoreSlot,
+  setTempHp,
+  shortRest,
+  slotMax,
+  spendResource,
+  spendSlot,
+} from './state.ts';
+export type { DamageResult, ShortRestInput, SlotKey } from './state.ts';
 export { modOf } from './util.ts';

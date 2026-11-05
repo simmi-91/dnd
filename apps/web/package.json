@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@dnd/rules": "*",
     "@dnd/shared": "*",
     "@fontsource/cinzel": "^5.3.0",
     "@fontsource/eb-garamond": "^5.3.0",

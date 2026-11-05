@@ -9,12 +9,15 @@ export interface Schema<T> {
 export class ApiRequestError extends Error {
   readonly status: number;
   readonly error: string;
+  /** Hele feilsvaret, f.eks. `{ state, version }` ved 409 `version_conflict`. */
+  readonly body: unknown;
 
-  constructor(status: number, error: string, message: string) {
+  constructor(status: number, error: string, message: string, body?: unknown) {
     super(message);
     this.name = 'ApiRequestError';
     this.status = status;
     this.error = error;
+    this.body = body;
   }
 }
 
@@ -30,6 +33,8 @@ interface RequestOptions<T> {
   /** Skjema for svaret. Uten skjema ignoreres innholdet i svaret. */
   schema?: Schema<T>;
   signal?: AbortSignal;
+  /** La forespørselen fullføre selv om siden lukkes (høyst 64 kB kropp). */
+  keepalive?: boolean;
 }
 
 async function readJson(res: Response): Promise<unknown> {
@@ -56,6 +61,7 @@ export async function apiRequest<T = undefined>(path: string, options: RequestOp
       credentials: 'same-origin',
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
       signal: options.signal,
+      ...(options.keepalive ? { keepalive: true } : {}),
     });
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') throw err;
@@ -66,7 +72,7 @@ export async function apiRequest<T = undefined>(path: string, options: RequestOp
 
   if (!res.ok) {
     const parsed = apiErrorSchema.safeParse(data);
-    if (parsed.success) throw new ApiRequestError(res.status, parsed.data.error, parsed.data.message);
+    if (parsed.success) throw new ApiRequestError(res.status, parsed.data.error, parsed.data.message, data);
     if (res.status >= 500) {
       throw new ApiRequestError(
         res.status,
@@ -89,4 +95,13 @@ export const api = {
   get: <T>(path: string, schema: Schema<T>, signal?: AbortSignal) => apiRequest(path, { schema, signal }),
   post: <T = undefined>(path: string, body?: unknown, schema?: Schema<T>) =>
     apiRequest<T>(path, { method: 'POST', body, schema }),
+  put: <T = undefined>(
+    path: string,
+    body?: unknown,
+    schema?: Schema<T>,
+    opts: { keepalive?: boolean } = {},
+  ) => apiRequest<T>(path, { method: 'PUT', body, schema, keepalive: opts.keepalive }),
+  patch: <T = undefined>(path: string, body?: unknown, schema?: Schema<T>) =>
+    apiRequest<T>(path, { method: 'PATCH', body, schema }),
+  delete: (path: string) => apiRequest(path, { method: 'DELETE' }),
 };

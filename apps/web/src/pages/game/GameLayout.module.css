@@ -1,0 +1,55 @@
+.sync {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  z-index: 15;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--dim);
+  font-size: 0.85rem;
+}
+
+.syncError {
+  border-color: var(--error);
+  color: var(--error);
+  font-weight: 600;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--good);
+}
+
+.dot[data-status='saving'] {
+  background: var(--bonus);
+}
+
+.dot[data-status='error'] {
+  background: var(--error);
+}
+
+.notice {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 1100px;
+  margin: 8px auto 0;
+}
+
+@media (min-width: 700px) {
+  .sync {
+    top: 14px;
+    right: 18px;
+  }
+}

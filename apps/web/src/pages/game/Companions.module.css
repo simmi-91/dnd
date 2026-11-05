@@ -1,0 +1,264 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+
+.cardHead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.name {
+  font-size: 1.2rem;
+  color: var(--ink);
+}
+
+/* ---------- Bryter ---------- */
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--touch);
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.switchTrack {
+  position: relative;
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--line);
+  border: 1px solid var(--input-line);
+  transition: background-color 0.15s ease;
+}
+
+.switchThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 0 1px 2px var(--shadow);
+  transition: transform 0.15s ease;
+}
+
+.switch[aria-checked='true'] .switchTrack {
+  background: var(--good);
+  border-color: var(--good);
+}
+
+.switch[aria-checked='true'] .switchThumb {
+  transform: translateX(18px);
+}
+
+/* ---------- HP ---------- */
+
+.hp {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hpRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.hpNum {
+  font: 700 1.8rem/1 var(--font-heading);
+}
+
+[data-tone='good'] {
+  color: var(--good);
+}
+
+[data-tone='mid'] {
+  color: var(--hp-mid);
+}
+
+[data-tone='low'] {
+  color: var(--error);
+}
+
+.down {
+  color: var(--error);
+  font-weight: 700;
+}
+
+.hpControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* ---------- Statblokk ---------- */
+
+.abilities {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+
+.ability {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 2px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: var(--paper);
+  font-size: 0.9rem;
+}
+
+.changed {
+  border-color: var(--gold);
+  background: var(--bg);
+}
+
+.abLabel {
+  font: 600 0.7rem/1.2 var(--font-heading);
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.abMod {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.attacks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.details summary {
+  min-height: var(--touch);
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.desc {
+  white-space: pre-line;
+  font-size: 0.95rem;
+}
+
+.note {
+  border-left: 3px solid var(--gold);
+  padding: 4px 10px;
+  background: var(--paper);
+}
+
+/* ---------- Trekk ---------- */
+
+.traits {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.traitList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trait {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.addTrait {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.addTrait > .field {
+  flex: 1 1 9rem;
+}
+
+.addTrait p {
+  flex-basis: 100%;
+}
+
+/* ---------- Skjema for egne følgesvenner ---------- */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.formRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+@media (min-width: 700px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+}
+
+@media (min-width: 1100px) {
+  .grid {
+    gap: 22px;
+  }
+}

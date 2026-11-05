@@ -1,0 +1,64 @@
+.picker {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: var(--touch);
+  cursor: pointer;
+}
+
+/* Selve radioknappen er usynlig, men kan fortsatt fokuseres og velges med tastatur. */
+.radio {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.swatch {
+  width: 100%;
+  height: 36px;
+  border-radius: var(--radius);
+  border: 2px solid var(--line);
+}
+
+.radio:checked + .swatch {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.radio:focus-visible + .swatch {
+  outline: var(--focus);
+  outline-offset: 2px;
+}
+
+.label {
+  font-size: 0.95rem;
+}
+
+.radio:checked ~ .label {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+@media (min-width: 700px) {
+  .options {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}

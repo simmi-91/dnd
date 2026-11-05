@@ -6,6 +6,8 @@ import { createRequireAuth } from './auth/plugin.ts';
 import type { SessionSettings } from './auth/session.ts';
 import type { Config } from './config.ts';
 import { createDb, type Db } from './db/index.ts';
+import { createDdbClient, type FetchLike } from './ddb/client.ts';
+import { gameRoutes } from './routes/games.ts';
 import { ERRORS, sendError, type ErrorCode } from './http/errors.ts';
 import { authRoutes } from './routes/auth.ts';
 import { healthRoutes } from './routes/health.ts';
@@ -18,6 +20,10 @@ export interface AppDeps {
   /** Verifisering av Google ID-token (byttes ut i tester). Standard bruker google-auth-library. */
   verifyGoogleToken?: GoogleVerifier;
   logger?: FastifyServerOptions['logger'];
+  /** `fetch` mot D&D Beyond (byttes ut i tester, som aldri går mot den ekte tjenesten). */
+  ddbFetch?: FetchLike;
+  /** Klokke for bufferen og grensen per bruker (tester). */
+  now?: () => number;
 }
 
 const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -47,6 +53,8 @@ export function defaultLogger(config: Config): FastifyServerOptions['logger'] {
         'req.headers.authorization',
         'res.headers["set-cookie"]',
         'req.body.credential',
+        'req.body.ddbUrlOrId',
+        'req.body.json',
       ],
       censor: '[skjult]',
     },
@@ -67,6 +75,12 @@ export async function buildApp(config: Config, deps: AppDeps = {}): Promise<Fast
   const verifyGoogleToken =
     deps.verifyGoogleToken ?? (config.googleClientId ? createGoogleVerifier(config.googleClientId) : null);
   const settings: SessionSettings = { ttlDays: config.sessionTtlDays, secure: config.isProduction };
+  const ddb = createDdbClient({
+    fetch: deps.ddbFetch,
+    now: deps.now,
+    cacheSeconds: config.ddbCacheSeconds,
+    fetchesPerHour: config.ddbFetchesPerHour,
+  });
 
   await app.register(fastifyCookie);
   app.decorateRequest('user', null);
@@ -119,6 +133,7 @@ export async function buildApp(config: Config, deps: AppDeps = {}): Promise<Fast
   await app.register(async (protectedScope) => {
     protectedScope.addHook('preHandler', createRequireAuth(db, settings));
     await protectedScope.register(meRoutes);
+    await protectedScope.register(gameRoutes, { db, ddb });
   });
 
   if (config.webDir) await registerWeb(app, config.webDir);

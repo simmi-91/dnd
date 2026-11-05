@@ -77,6 +77,33 @@ Se «Arbeidsmåte» i `CLAUDE.md`: workers per del med passende modell, uavhengi
   - Kjæledyr som er borte fra D&D Beyond, beholder trekk og HP i `GameState`, så de er der hvis dyret kommer tilbake.
   - `shortRest` og `longRest` kommer i 2b.
 
+## Beslutninger under fase 2b (spill, ark og følgesvenner)
+
+- **Karakterer:**
+  - `dd_characters` er unik på (`user_id`, `ddb_id`) og deles mellom spillene. Hvert spill har egen `dd_game_state`.
+  - Når et spill slettes, forsvinner tilstanden også. Karakterraden slettes når ingen spill bruker den.
+- **D&D Beyond:**
+  - User-Agent er ren ASCII, fordi D&D Beyond svarer 400 på andre tegn.
+  - Svarene bufres i 5 minutter per ID, og bufferen deles mellom brukere.
+  - Grensen er 10 hentinger per bruker per time (`DDB_FETCHES_PER_HOUR`). Forsøket telles før hentingen, og nettfeil og 5xx gis tilbake. 403, 404, 405 og 429 teller.
+  - D&D Beyond-feil gir 422 med norsk melding, slik at de ikke blandes med 403 «sperret» eller 404 «finnes ikke». Nettfeil og 5xx gir 502, og for mange hentinger gir 429 med `Retry-After`.
+  - ID-er logges aldri, bare statuskoden fra D&D Beyond.
+- **API:**
+  - `POST /api/ddb/preview` er nytt, for forhåndsvisning i «Nytt spill».
+  - `POST /api/games` tar `{name, ddbUrlOrId}` eller `{name, json}`.
+  - `PATCH ddbUrlOrId` bytter karakter. Er det en annen karakter, starter tilstanden på nytt, også egne følgesvenner.
+  - Innliming har body-grense på 2 MB i Node og 3 MB i nginx.
+- **Cover** er en fast liste: `pergament`, `frost`, `lego`, `skog`, `ild`, `natt`.
+- **Regler** (`packages/rules/src/state.ts`):
+  - Temp HP stables ikke og tas først. Konsentrasjons-DC er maks av 10 og halve skaden, høyst 30.
+  - Short Rest tar slag per terning (`rolls`), og hver terning gir minst 1 HP.
+  - Long Rest (2024) gir alle Hit Dice tilbake, og exhaustion går ned med 1.
+  - Funksjonene heter `spendResource` og `spendSlot`, ikke `use…`, så de ikke forveksles med React-hooks.
+- **Web:**
+  - Spillet har rutene `/spill/:id/ark` og `/spill/:id/folgesvenner`, og menyen viser Ark, Følgesvenner og Mine spill.
+  - «Nytt spill» er en dialog fra 700 px og en egen side under.
+  - Synken lagrer 0,7 sekunder etter siste endring, med én PUT om gangen. Ved 409 brukes serverens tilstand. `keepalive` brukes når fanen skjules eller ved `pagehide`. Ved nettfeil prøves det igjen etter 5 sekunder.
+
 ## Status
 
 - **Fase 0 og 1 er ferdige** (4. november 2026). Appen kjører på `https://dnd.3lin.no`, innlogging med Google virker på mobil og laptop, og push til `main` ruller ut automatisk.
@@ -94,4 +121,11 @@ Se «Arbeidsmåte» i `CLAUDE.md`: workers per del med passende modell, uavhengi
 - **Fase 2a er ferdig** (4. november 2026). `deriveCharacter` gir Elowens tall fra D&D Beyond: HP 40, AC 14, Init +6, Longbow +7 1d8+3 og alle saves og skills som er sjekket. Lint, typecheck, test (194 tester), build og `prettier --check` går gjennom, og alle funn fra den uavhengige valideringen er rettet.
   - **Lego-rangeren er sjekket mot D&D Beyond-arket:** DEX 18, AC 18, Init +4, HP 39, Longbow +9 1d8+4, Perception +9, og alle saves og skills.
   - **Ikke sett i ekte data:** multiclass, third casters, `resetType` 1 og `operator` 2 på `limitedUse`. Disse er bare testet med håndlagde objekter.
-- **Neste fase:** 2b. Det omfatter tabellene `dd_characters`, `dd_games` og `dd_game_state`, henting fra D&D Beyond med en grense per bruker, Mine spill og Nytt spill, ark og følgesvenner, og HP, Short Rest og Long Rest. Den tas i en ny tråd.
+- **Fase 2b er ferdig** (5. november 2026). Den uavhengige valideringen gjorde en ekte kjøring med `npm run dev` og ekte henting fra D&D Beyond.
+  - «Icewind Dale» (Elowen) og «Red dragons tale» (Lego) viser de samme tallene som D&D Beyond.
+  - Opprettelse med innlimt JSON, Short Rest, Long Rest, 409, CSRF og grensen for henting virker.
+  - Bruker 2 får 404 på alle spillene til bruker 1.
+  - Lint, typecheck, test (311 tester), build og `prettier --check` går gjennom, og alle funn er rettet.
+- **Nginx på serveren** har `client_max_body_size 20m` i `server`-blokken for 443, og den gjelder også `location /`. Innliming begrenses derfor av Node (2 MB), og ingen endring trengs. Kopien i `deploy/nginx/` har 3m i `location /`, med samme virkning. Migrering `0002` kjøres automatisk ved utrulling.
+- **Kjent:** `@dnd/server` har ikke eget `test`-skript. Bruk `npm test` fra rota eller `npx vitest run --project server`.
+- **Neste fase:** 3a, kataloger og `turReducer` i `packages/rules`, i en ny tråd.

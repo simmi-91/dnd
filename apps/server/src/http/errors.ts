@@ -1,3 +1,4 @@
+import { DDB_FORMAT_MESSAGE } from '@dnd/rules';
 import type { ApiError } from '@dnd/shared';
 import type { FastifyReply } from 'fastify';
 
@@ -14,6 +15,35 @@ export const ERRORS = {
     message: 'E-postadressen er allerede knyttet til en annen Google-konto',
   },
   invalid_request: { status: 400, message: 'Ugyldig forespørsel' },
+  ddb_invalid_ref: {
+    status: 400,
+    message: 'Skriv inn lenken til karakteren på D&D Beyond (dndbeyond.com/characters/…) eller ID-en.',
+  },
+  ddb_private: {
+    status: 422,
+    message: 'Karakteren er privat. Sett Character Privacy til Public på D&D Beyond.',
+  },
+  ddb_not_found: {
+    status: 422,
+    message: 'Fant ikke karakteren på D&D Beyond. Sjekk lenken eller ID-en.',
+  },
+  ddb_format: { status: 422, message: DDB_FORMAT_MESSAGE },
+  ddb_unavailable: {
+    status: 502,
+    message: 'D&D Beyond svarer ikke akkurat nå. Prøv igjen om litt, eller bruk lim inn.',
+  },
+  ddb_rate_limited: {
+    status: 429,
+    message: 'Du har hentet fra D&D Beyond for mange ganger den siste timen.',
+  },
+  paste_invalid_json: {
+    status: 400,
+    message: 'Teksten er ikke gyldig JSON. Lim inn hele svaret fra D&D Beyond.',
+  },
+  version_conflict: {
+    status: 409,
+    message: 'Tilstanden er endret på en annen enhet. Den nyeste versjonen er hentet.',
+  },
   not_found: { status: 404, message: 'Fant ikke ressursen' },
   payload_too_large: { status: 413, message: 'Forespørselen er for stor' },
   unsupported_media_type: { status: 415, message: 'Ukjent innholdstype' },
@@ -22,6 +52,10 @@ export const ERRORS = {
 } as const satisfies Record<string, { status: number; message: string }>;
 
 export type ErrorCode = keyof typeof ERRORS;
+
+/** Meldingen ved `ddb_format` når brukeren har limt inn rådata («Bruk lim inn» gir ikke mening da). */
+export const PASTE_FORMAT_MESSAGE =
+  'Teksten ser ikke ut som en D&D Beyond-karakter. Kopier hele svaret fra adressen.';
 
 export function errorBody(code: ErrorCode, message?: string): ApiError {
   return { error: code, message: message ?? ERRORS[code].message };

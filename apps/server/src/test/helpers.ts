@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { SESSION_COOKIE } from '@dnd/shared';
 import { sql } from 'kysely';
@@ -6,6 +6,7 @@ import type { GoogleIdentity, GoogleVerifier } from '../auth/google.ts';
 import { loadConfig, type Config } from '../config.ts';
 import { createDb, type Db } from '../db/index.ts';
 import { migrateToLatest } from '../db/migrator.ts';
+import type { FetchLike } from '../ddb/client.ts';
 
 let envLoaded = false;
 
@@ -83,6 +84,9 @@ export async function freshTestDb(config: Config): Promise<Db> {
 }
 
 export async function clearData(db: Db): Promise<void> {
+  await db.deleteFrom('dd_game_state').execute();
+  await db.deleteFrom('dd_games').execute();
+  await db.deleteFrom('dd_characters').execute();
   await db.deleteFrom('dd_auth_sessions').execute();
   await db.deleteFrom('dd_users').execute();
 }
@@ -97,6 +101,52 @@ export function fakeGoogle(extra: Partial<GoogleIdentity> = {}): GoogleVerifier 
 }
 
 export const WRITE_HEADERS = { 'x-requested-with': 'dnd' } as const;
+
+/** Rå D&D Beyond-svar fra `packages/rules/fixtures` (anonymisert, ID 1000001 og 1000002). */
+export function ddbFixture(name: 'elowen-4' | 'lego-ranger-5'): Record<string, unknown> {
+  const file = resolve(import.meta.dirname, `../../../../packages/rules/fixtures/${name}.json`);
+  return JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
+}
+
+export const ELOWEN_ID = 1000001;
+export const LEGO_ID = 1000002;
+
+export interface FakeDdb {
+  fetch: FetchLike;
+  /** URL-ene som ble hentet. */
+  calls: string[];
+  /** Svar for en ID: rådata (200) eller bare en statuskode. */
+  responses: Map<number, unknown>;
+  headers: Array<Record<string, string>>;
+}
+
+/** Falsk D&D Beyond: svarer med fixturene, og går aldri mot den ekte tjenesten. */
+export function fakeDdb(): FakeDdb {
+  const responses = new Map<number, unknown>([
+    [ELOWEN_ID, ddbFixture('elowen-4')],
+    [LEGO_ID, ddbFixture('lego-ranger-5')],
+  ]);
+  const calls: string[] = [];
+  const headers: Array<Record<string, string>> = [];
+  return {
+    calls,
+    responses,
+    headers,
+    fetch: async (url, init) => {
+      calls.push(url);
+      headers.push({ ...(init.headers as Record<string, string>) });
+      const id = Number(url.split('/').pop());
+      const r = responses.get(id);
+      if (r === undefined) return new Response('{"success":false}', { status: 404 });
+      if (typeof r === 'number') return new Response('', { status: r });
+      if (r instanceof Error) throw r;
+      return new Response(typeof r === 'string' ? r : JSON.stringify(r), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    },
+  };
+}
 
 /** Henter verdien til sesjonsinformasjonskapselen fra et inject-svar. */
 export function sessionCookieFrom(res: { cookies: Array<{ name: string; value: string }> }) {

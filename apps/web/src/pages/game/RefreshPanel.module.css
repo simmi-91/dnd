@@ -1,0 +1,70 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ok {
+  color: var(--good);
+  font-weight: 600;
+}
+
+.newFeatures {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-color: var(--gold);
+  background: var(--paper);
+}
+
+.featureList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.featureList summary {
+  min-height: var(--touch);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.desc {
+  white-space: pre-line;
+  padding: 0 0 8px 18px;
+}
+
+.paste {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pasteSummary {
+  min-height: var(--touch);
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.paste[open] > .pasteSummary {
+  margin-bottom: 8px;
+}
+
+.warning {
+  border-left: 3px solid var(--error);
+  padding: 4px 10px;
+  background: var(--paper);
+}
+
+.paste code {
+  word-break: break-all;
+  font-size: 0.85em;
+}

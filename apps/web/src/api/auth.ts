@@ -33,7 +33,7 @@ function shouldRetry(failureCount: number, err: unknown): boolean {
  * - 403 `blocked`: `me` hentes på nytt. Svaret gir den samme feilen, og rutevernet viser «Kontoen er sperret».
  * `/api/me` selv gjør 401 om til null og utløser derfor ikke dette.
  */
-function handleAuthError(qc: QueryClient, err: unknown, key?: readonly unknown[]) {
+export function handleAuthError(qc: QueryClient, err: unknown, key?: readonly unknown[]) {
   if (!isApiRequestError(err)) return;
   const isMe = key?.[0] === queryKeys.me[0];
   if (err.status === 401 && qc.getQueryData(queryKeys.me)) {

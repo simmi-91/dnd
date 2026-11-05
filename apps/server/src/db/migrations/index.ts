@@ -1,5 +1,6 @@
 import type { DdMigration } from '../migrator.ts';
 import { usersAndSessions } from './0001_users_and_sessions.ts';
+import { charactersAndGames } from './0002_characters_and_games.ts';
 
 /**
  * Alle migreringer, i kode, så de virker etter bundling. Navnene sorteres alfabetisk.
@@ -7,4 +8,5 @@ import { usersAndSessions } from './0001_users_and_sessions.ts';
  */
 export const migrations: Record<string, DdMigration> = {
   '0001_users_and_sessions': usersAndSessions,
+  '0002_characters_and_games': charactersAndGames,
 };

@@ -154,6 +154,8 @@ export interface DdbSlot {
 }
 
 export interface DdbCharacter {
+  /** Karakter-ID-en i D&D Beyond. */
+  id?: number | null;
   name?: string | null;
   stats: DdbStat[];
   bonusStats?: DdbStat[] | null;

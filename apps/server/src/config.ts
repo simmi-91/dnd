@@ -20,6 +20,7 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: optionalString,
   SESSION_TTL_DAYS: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(3650).default(60)),
   DDB_CACHE_SECONDS: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).default(300)),
+  DDB_FETCHES_PER_HOUR: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(1000).default(10)),
   WEB_DIR: optionalString,
   IMAGE_DIR: optionalString,
   DEV_LOGIN_EMAIL: z.preprocess(emptyToUndefined, z.email().optional()),
@@ -33,6 +34,8 @@ export interface Config {
   googleClientId: string | null;
   sessionTtlDays: number;
   ddbCacheSeconds: number;
+  /** Hentinger fra D&D Beyond per bruker per time. Treff i bufferen teller ikke. */
+  ddbFetchesPerHour: number;
   webDir: string | null;
   imageDir: string | null;
   /** Satt bare når dev-login er tillatt (ikke i produksjon). */
@@ -67,6 +70,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     googleClientId: e.GOOGLE_CLIENT_ID ?? null,
     sessionTtlDays: e.SESSION_TTL_DAYS,
     ddbCacheSeconds: e.DDB_CACHE_SECONDS,
+    ddbFetchesPerHour: e.DDB_FETCHES_PER_HOUR,
     webDir: e.WEB_DIR ?? null,
     imageDir: e.IMAGE_DIR ?? null,
     devLoginEmail: !isProduction && e.DEV_LOGIN_EMAIL ? e.DEV_LOGIN_EMAIL.toLowerCase() : null,

@@ -269,11 +269,11 @@ Hver fase skal kunne rulles ut og brukes for seg.
 
 ### Fase 2 – Spill, karakter og ark
 - [x] `packages/rules`: `deriveCharacter` i TypeScript med fixture-tester (2a)
-- [ ] Tabellene `dd_characters`, `dd_games` og `dd_game_state`
-- [ ] Hente fra D&D Beyond på serveren, lim inn som reserve, oppdater med nivåkort
-- [ ] Mine spill, Nytt spill, arkivering
-- [ ] Ark-skjermen og Følgesvenner (bjørnetrekk med `seedPetTraits` og `applyPetTraits`, egne følgesvenner som ugla)
-- [ ] HP, ressurser, Short Rest og Long Rest
+- [x] Tabellene `dd_characters`, `dd_games` og `dd_game_state`
+- [x] Hente fra D&D Beyond på serveren, lim inn som reserve, oppdater med nivåkort
+- [x] Mine spill, Nytt spill, arkivering
+- [x] Ark-skjermen og Følgesvenner (bjørnetrekk med `seedPetTraits` og `applyPetTraits`, egne følgesvenner som ugla)
+- [x] HP, ressurser, Short Rest og Long Rest
 
 **Ferdig når:** Spillet «Icewind Dale» med Elowen viser de samme tallene som D&D Beyond, og et spill med en annen karakter kan opprettes.
 

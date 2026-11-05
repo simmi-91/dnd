@@ -6,6 +6,8 @@ export interface Companion {
   kind?: string;
   ac?: number;
   hpMax?: number;
+  /** Tapt HP. Brukes bare når `hpMax` er satt. */
+  hpRemoved?: number;
   initiativeBonus: number;
   notes?: string;
 }
