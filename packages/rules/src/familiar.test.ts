@@ -4,6 +4,15 @@ import legoRaw from '../fixtures/lego-ranger-5.json';
 import {
   DELIVER_TOUCH,
   FAMILIAR_FORMS,
+  INK_CLOUD,
+  castFindFamiliar,
+  castsLeft,
+  dismissFamiliarForever,
+  familiarCreatureType,
+  familiarMaxSpeed,
+  familiarSpeedText,
+  familiarStatus,
+  updateFamiliar,
   FAMILIAR_FORM_IDS,
   FAMILIAR_ID,
   activeRules,
@@ -38,7 +47,7 @@ const lego = deriveCharacter(legoRaw);
 const withOwl = (): GameState => summonFamiliar(initialGameState(elowen), { form: 'owl', name: 'Ugla' });
 
 describe('formene i Find Familiar (2024)', () => {
-  it('har alle elleve former', () => {
+  it('har de elleve formene fra spellen og seks andre dyr med CR 0', () => {
     expect([...FAMILIAR_FORM_IDS]).toEqual([
       'owl',
       'cat',
@@ -51,7 +60,14 @@ describe('formene i Find Familiar (2024)', () => {
       'lizard',
       'weasel',
       'octopus',
+      'eagle',
+      'jackal',
+      'badger',
+      'crab',
+      'baboon',
+      'deer',
     ]);
+    expect(FAMILIAR_FORM_IDS.filter((id) => FAMILIAR_FORMS[id].group === 'spell')).toHaveLength(11);
     for (const id of FAMILIAR_FORM_IDS) {
       const f = FAMILIAR_FORMS[id];
       expect(f.id).toBe(id);
@@ -76,12 +92,33 @@ describe('formene i Find Familiar (2024)', () => {
     expect(pick('rat')).toEqual([10, 1, 0, { walk: 20, climb: 20 }]);
     expect(pick('spider')).toEqual([12, 1, 2, { walk: 20, climb: 20 }]);
     expect(pick('frog')).toEqual([11, 1, 1, { walk: 20, swim: 20 }]);
-    expect(pick('lizard')).toEqual([10, 2, 1, { walk: 20, climb: 20 }]);
+    expect(pick('lizard')).toEqual([10, 2, 0, { walk: 20, climb: 20 }]);
     expect(pick('weasel')).toEqual([13, 1, 3, { walk: 30, climb: 30 }]);
     expect(pick('octopus')).toEqual([12, 3, 2, { walk: 5, swim: 30 }]);
     expect(FAMILIAR_FORMS.owl.traits.map((t) => t.name)).toEqual(['Flyby']);
     expect(FAMILIAR_FORMS.owl.senses).toEqual(['Darkvision 120 ft']);
     expect(FAMILIAR_FORMS.owl.skills).toEqual({ Perception: 5, Stealth: 5 });
+    expect(pick('eagle')).toEqual([12, 4, 2, { walk: 10, fly: 60 }]);
+    expect(pick('jackal')).toEqual([12, 3, 2, { walk: 40 }]);
+    expect(pick('badger')).toEqual([11, 5, 0, { walk: 20, burrow: 5 }]);
+    expect(pick('crab')).toEqual([11, 3, 0, { walk: 20, swim: 20 }]);
+    expect(pick('baboon')).toEqual([12, 3, 2, { walk: 30, climb: 30 }]);
+    expect(pick('deer')).toEqual([13, 4, 3, { walk: 50 }]);
+    expect(FAMILIAR_FORMS.owl.passivePerception).toBe(15);
+    expect(FAMILIAR_FORMS.hawk.passivePerception).toBe(16);
+    expect(FAMILIAR_FORMS.lizard.passivePerception).toBe(9);
+    expect(FAMILIAR_FORMS.rat.traits.map((t) => t.name)).toEqual(['Agile']);
+    expect(FAMILIAR_FORMS.weasel.skills).toEqual({ Acrobatics: 5, Perception: 3, Stealth: 5 });
+    expect(FAMILIAR_FORMS.octopus.size).toBe('Small');
+    expect(FAMILIAR_FORMS.octopus.traits.map((t) => t.name)).toContain('Ink Cloud');
+    expect(FAMILIAR_FORMS.bat.traits).toEqual([]);
+    expect(FAMILIAR_FORMS.hawk.traits).toEqual([]);
+  });
+
+  it('viser alle bevegelsestypene, raskest først', () => {
+    expect(familiarSpeedText(FAMILIAR_FORMS.owl)).toBe('flyging 60 ft, gange 5 ft');
+    expect(familiarSpeedText(FAMILIAR_FORMS.badger)).toBe('gange 20 ft, graving 5 ft');
+    expect(familiarMaxSpeed(FAMILIAR_FORMS.octopus)).toBe(30);
   });
 
   it('isFamiliarForm', () => {
@@ -110,11 +147,23 @@ describe('familiaren i GameState', () => {
 
   it('summonFamiliar gir full HP, og navnet beholdes ved nytt kast', () => {
     const g = withOwl();
-    expect(g.familiar).toEqual({ form: 'owl', name: 'Ugla', hpRemoved: 0, present: true });
+    expect(g.familiar).toEqual({
+      form: 'owl',
+      name: 'Ugla',
+      hpRemoved: 0,
+      present: true,
+      creatureType: 'fey',
+    });
     expect(familiarHp(g.familiar)).toBe(1);
     expect(summonFamiliar(initialGameState(elowen), { form: 'cat' }).familiar?.name).toBe('Cat');
     const cat = changeFamiliarForm(g, 'cat');
-    expect(cat.familiar).toEqual({ form: 'cat', name: 'Ugla', hpRemoved: 0, present: true });
+    expect(cat.familiar).toEqual({
+      form: 'cat',
+      name: 'Ugla',
+      hpRemoved: 0,
+      present: true,
+      creatureType: 'fey',
+    });
     expect(familiarHpMax(cat.familiar!)).toBe(2);
   });
 
@@ -251,5 +300,82 @@ describe('familiaren i kamp', () => {
     const none = initialGameState(elowen);
     const c = fight(none);
     expect(damageFamiliarInCombat(c, none, 3)).toEqual({ combat: c, game: none, vanished: false });
+  });
+});
+
+describe('kast, status og skapningstype', () => {
+  it('status skiller mellom sendt bort og forsvunnet', () => {
+    const g = withOwl();
+    expect(familiarStatus(g.familiar!)).toBe('present');
+    const away = setFamiliarPresent(g, false);
+    expect(familiarStatus(away.familiar!)).toBe('dismissed');
+    expect(setFamiliarPresent(away, true).familiar?.present).toBe(true);
+    const gone = damageFamiliar(g, 1).state;
+    expect(familiarStatus(gone.familiar!)).toBe('gone');
+    // Forsvant på 0 HP: kan ikke hentes tilbake, bare kalles fram på nytt.
+    expect(setFamiliarPresent(gone, true)).toBe(gone);
+  });
+
+  it('skapningstype lagres, beholdes ved nytt kast og er Fey i eldre tilstand', () => {
+    const g = summonFamiliar(initialGameState(elowen), { form: 'owl', creatureType: 'celestial' });
+    expect(g.familiar?.creatureType).toBe('celestial');
+    expect(changeFamiliarForm(g, 'hawk').familiar?.creatureType).toBe('celestial');
+    expect(familiarCreatureType({ form: 'owl', name: 'Ugla', hpRemoved: 0, present: true })).toBe('fey');
+  });
+
+  it('updateFamiliar endrer navn og type uten å gi HP', () => {
+    const hurt = damageFamiliar(summonFamiliar(initialGameState(elowen), { form: 'cat' }), 1).state;
+    const u = updateFamiliar(hurt, { name: ' Pus ', creatureType: 'fiend' });
+    expect(u.familiar).toMatchObject({ name: 'Pus', creatureType: 'fiend', hpRemoved: 1 });
+    expect(updateFamiliar(u, { name: '  ' }).familiar?.name).toBe('Pus');
+    expect(updateFamiliar(initialGameState(elowen), { name: 'X' })).not.toHaveProperty('familiar');
+  });
+
+  it('kan fjernes for godt', () => {
+    expect(dismissFamiliarForever(withOwl())).not.toHaveProperty('familiar');
+  });
+
+  it('ritual koster ingenting, uten ritual betales som andre spells', () => {
+    const g = initialGameState(elowen);
+    const r = castFindFamiliar(g, elowen, { form: 'owl', ritual: true });
+    expect(r.cost).toEqual({ kind: 'ritual' });
+    expect(r.state.familiar?.present).toBe(true);
+    expect(r.state.resources).toEqual(g.resources);
+    expect(r.state.slotsUsed).toEqual(g.slotsUsed);
+
+    const before = castsLeft(g, elowen, 'Find Familiar') ?? 0;
+    expect(before).toBeGreaterThan(0);
+    const paid = castFindFamiliar(g, elowen, { form: 'owl', ritual: false });
+    expect(paid.cost).not.toBeNull();
+    expect(paid.state.familiar?.present).toBe(true);
+    expect(castsLeft(paid.state, elowen, 'Find Familiar')).toBe(before - 1);
+
+    // Uten spellen på arket kan den ikke betales.
+    const none = castFindFamiliar(
+      initialGameState(lego),
+      { ...lego, spells: [] },
+      { form: 'owl', ritual: false },
+    );
+    expect(none.cost).toBeNull();
+    expect(none.state).not.toHaveProperty('familiar');
+  });
+
+  it('Ink Cloud bare for Octopus', () => {
+    expect(familiarTurnOptions('octopus').reactions).toEqual([DELIVER_TOUCH, INK_CLOUD]);
+    expect(familiarTurnOptions('owl').reactions).toEqual([DELIVER_TOUCH]);
+    const owl = fight();
+    expect(canDo(owl, { who: FAMILIAR_ID, kind: 'option', option: INK_CLOUD }).reason).toBe(
+      'Bare familiaren i formen Octopus kan gjøre dette',
+    );
+    const octo = fight(summonFamiliar(initialGameState(elowen), { form: 'octopus', name: 'Blekk' }));
+    expect(canDo(octo, { who: FAMILIAR_ID, kind: 'option', option: INK_CLOUD }).ok).toBe(true);
+  });
+
+  it('Se gjennom familiaren er en bonus action for karakteren', () => {
+    const senses = turnOptions(elowen).bonus.find((o) => o.id === 'familiar-senses');
+    expect(senses?.cost).toBe('bonus');
+    expect(turnOptions({ ...lego, spells: [] }).bonus.map((o) => o.id)).not.toContain('familiar-senses');
+    const s = fight();
+    expect(canDo(s, { who: 'char', kind: 'option', option: senses! }).ok).toBe(true);
   });
 });

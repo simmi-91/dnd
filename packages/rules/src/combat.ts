@@ -8,7 +8,7 @@ import type { ActionId } from './actions.ts';
 import type { Companion } from './companions.ts';
 import { companionInitiativeBonus } from './companions.ts';
 import { isConditionId, type ConditionId } from './conditions.ts';
-import { FAMILIAR_FORMS, FIND_FAMILIAR, type FamiliarState } from './familiar.ts';
+import { FAMILIAR_FORMS, FIND_FAMILIAR, familiarMaxSpeed, type FamiliarState } from './familiar.ts';
 import { darknessAdvantage, firstTurnSpeed, ruleFlags, type RuleFlag } from './features.ts';
 import type { GameState, PetState } from './import.ts';
 import { applyPetTraits } from './pets.ts';
@@ -295,11 +295,11 @@ export const FAMILIAR_ID = 'familiar';
 
 /**
  * Familiaren fra Find Familiar som egen deltaker: eget initiativ (DEX-mod fra formen) og egen tur.
- * Den kan ikke angripe. Speed er den raskeste bevegelsen formen har (f.eks. fly 60 ft for Owl).
+ * Den kan ikke angripe. Grensen for bevegelse er den raskeste formen har (f.eks. fly 60 ft for Owl).
+ * Alle typene vises med `familiarSpeedText`.
  */
 export function familiarParticipant(f: FamiliarState): Participant {
   const form = FAMILIAR_FORMS[f.form];
-  const s = form.speed;
   return makeParticipant({
     id: FAMILIAR_ID,
     kind: 'familiar',
@@ -309,7 +309,7 @@ export function familiarParticipant(f: FamiliarState): Participant {
     ac: form.ac,
     limits: {
       canAttack: FIND_FAMILIAR.canAttack,
-      speed: Math.max(s.walk, s.fly ?? 0, s.swim ?? 0, s.climb ?? 0),
+      speed: familiarMaxSpeed(form),
     },
   });
 }

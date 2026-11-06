@@ -33,7 +33,7 @@ import {
   type OptionDef,
   type ResourceContext,
 } from './features.ts';
-import { FAMILIAR_NO_ATTACK, damageFamiliar } from './familiar.ts';
+import { FAMILIAR_FORMS, FAMILIAR_NO_ATTACK, damageFamiliar, isFamiliarForm } from './familiar.ts';
 import type { GameState } from './import.ts';
 import type { PetAttack, Weapon } from './sheet.ts';
 import { concentrationDc } from './state.ts';
@@ -115,6 +115,7 @@ export const REASONS = {
   targetUp: (s: string, n: string) => `${n} har fortsatt HP. Du kan flytte ${s} når målet faller til 0 HP.`,
   notProne: 'Du ligger ikke (Prone)',
   familiarOnly: 'Bare familiaren kan gjøre dette',
+  familiarForm: (f: string) => `Bare familiaren i formen ${f} kan gjøre dette`,
   standUpCost: (n: number) => `Å reise seg koster ${n} ft, og du har ikke nok bevegelse igjen`,
 } as const;
 
@@ -248,6 +249,12 @@ export function canDo(state: CombatState, option: TurnOption, ctx: TurnContext =
       const o = option.option;
       if (o.attack) return no(REASONS.unknown);
       if (o.familiarOnly && p.kind !== 'familiar') return no(REASONS.familiarOnly);
+      if (o.familiarForm && p.refId !== o.familiarForm)
+        return no(
+          REASONS.familiarForm(
+            isFamiliarForm(o.familiarForm) ? FAMILIAR_FORMS[o.familiarForm].name : o.familiarForm,
+          ),
+        );
       if (o.cost === 'bonus' && t.bonus != null) return no(REASONS.bonus);
       if (o.cost === 'reaction' && t.reaction != null) return no(REASONS.reaction);
       if (o.cost === 'action' && t.action != null) return no(REASONS.action);

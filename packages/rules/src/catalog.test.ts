@@ -175,7 +175,12 @@ describe('evneregisteret', () => {
   it('bonus actions og reactions fra arket', () => {
     const o = turnOptions(elowen);
     expect(o.actions).toBe(ACTIONS);
-    expect(o.bonus.map((b) => b.id)).toEqual(['light-attack', 'cast-hunters-mark', 'move-hunters-mark']);
+    expect(o.bonus.map((b) => b.id)).toEqual([
+      'light-attack',
+      'cast-hunters-mark',
+      'move-hunters-mark',
+      'familiar-senses',
+    ]);
     expect(o.reactions.map((b) => b.id)).toEqual(['opportunity-attack']);
     expect(o.part.map((b) => b.id)).toEqual(['nick-attack']);
     // Lego har to Light-våpen, men ingen Nick.

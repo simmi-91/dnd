@@ -16,10 +16,12 @@ import {
 } from '@dnd/rules';
 import { useId, useState, type FormEvent } from 'react';
 import { Dialog } from '../../components/Dialog';
-import { hpTone, makeId, MAX_HP_INPUT, parseIntInput, sign, speedsText } from '../../components/format';
+import { makeId, parseIntInput, sign, speedsText } from '../../components/format';
 import { IntField } from '../../components/IntField';
 import { useDocumentTitle } from '../../components/useDocumentTitle';
+import { FamiliarSection } from './FamiliarCard';
 import { useGameContext } from './GameContext';
+import { HpControl } from './HpControl';
 import styles from './Companions.module.css';
 
 const AB_LABEL: Record<Ability, string> = {
@@ -103,74 +105,9 @@ export function CompanionsPage() {
         </p>
       </section>
 
-      <OwnCompanions />
-    </div>
-  );
-}
+      <FamiliarSection />
 
-function HpControl({
-  name,
-  hp,
-  max,
-  onDamage,
-  onHeal,
-}: {
-  name: string;
-  hp: number;
-  max: number;
-  onDamage: (n: number) => void;
-  onHeal: (n: number) => void;
-}) {
-  const [value, setValue] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const run = (fn: (n: number) => void) => {
-    const r = parseIntInput(value, 1, MAX_HP_INPUT);
-    if (!r.ok) {
-      setError(r.error);
-      return;
-    }
-    setError(null);
-    setValue('');
-    fn(r.value);
-  };
-  return (
-    <div className={styles.hp}>
-      <div className={styles.hpRow}>
-        <span className="sc">HP</span>
-        <span className={`${styles.hpNum} tabular`} data-tone={hpTone(hp, max)}>
-          {hp}
-        </span>
-        <span className="dim tabular">/ {max}</span>
-      </div>
-      {hp === 0 && <p className={styles.down}>{name} er nede på 0 HP.</p>}
-      <div className={styles.hpControls}>
-        <IntField
-          label={`HP for ${name}`}
-          hideLabel
-          value={value}
-          onChange={setValue}
-          error={error}
-          placeholder="Antall"
-        />
-        <div className="btn-row">
-          <button
-            type="button"
-            className="btn btn--small"
-            onClick={() => run(onDamage)}
-            aria-label={`Skade på ${name}`}
-          >
-            Skade
-          </button>
-          <button
-            type="button"
-            className="btn btn--ghost btn--small"
-            onClick={() => run(onHeal)}
-            aria-label={`Helbred ${name}`}
-          >
-            Helbred
-          </button>
-        </div>
-      </div>
+      <OwnCompanions />
     </div>
   );
 }
@@ -469,7 +406,8 @@ function OwnCompanions() {
         )}
       </div>
       <p className="dim">
-        For følgesvenner som ikke finnes i D&amp;D Beyond, f.eks. en ugle fra Find Familiar.
+        For følgesvenner som ikke finnes i D&amp;D Beyond, f.eks. leiesoldater eller NPC-er som følger gruppa.
+        Familiaren fra Find Familiar har sitt eget kort.
       </p>
       {companions.length > 0 && (
         <ul className={styles.grid}>
@@ -644,7 +582,7 @@ function CompanionForm({
           className="input"
           value={name}
           maxLength={100}
-          placeholder="F.eks. Ugla"
+          placeholder="F.eks. Brann"
           onChange={(e) => setName(e.target.value)}
           aria-invalid={errors.name ? true : undefined}
           aria-describedby={errors.name ? ids.nameErr : undefined}
@@ -664,7 +602,7 @@ function CompanionForm({
           className="input"
           value={kind}
           maxLength={200}
-          placeholder="F.eks. Owl (Find Familiar)"
+          placeholder="F.eks. Mercenary"
           onChange={(e) => setKind(e.target.value)}
         />
       </div>
@@ -682,7 +620,7 @@ function CompanionForm({
           className="input"
           value={notes}
           maxLength={5000}
-          placeholder="F.eks. Flyby. Kan gi advantage med Help."
+          placeholder="F.eks. Følger gruppa til Bryn Shander."
           onChange={(e) => setNotes(e.target.value)}
         />
       </div>

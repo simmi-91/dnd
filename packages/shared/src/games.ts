@@ -1,4 +1,4 @@
-import { FAMILIAR_FORM_IDS } from '@dnd/rules';
+import { FAMILIAR_CREATURE_TYPES, FAMILIAR_FORM_IDS } from '@dnd/rules';
 import type { Companion, FamiliarState, GameState, PetState, PetTrait, Sheet } from '@dnd/rules';
 import { z } from 'zod';
 
@@ -48,6 +48,7 @@ export const familiarSchema = z.object({
   name: z.string().trim().min(1).max(100),
   hpRemoved: count,
   present: z.boolean(),
+  creatureType: z.enum(FAMILIAR_CREATURE_TYPES).optional(),
 }) satisfies z.ZodType<FamiliarState>;
 
 const countMap = z.record(z.string().max(64), count);

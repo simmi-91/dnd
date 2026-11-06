@@ -47,6 +47,8 @@ export interface OptionDef {
   requiresTargetDown?: boolean;
   /** Bare en familiar (Find Familiar) kan bruke valget. */
   familiarOnly?: boolean;
+  /** Bare familiaren i denne formen (`refId`) kan bruke valget, f.eks. Ink Cloud for Octopus. */
+  familiarForm?: string;
   /** Grunn når ressursen er brukt opp. */
   emptyReason?: string;
 }
@@ -294,9 +296,20 @@ export const RULES: readonly RuleDef[] = [
     name: 'Find Familiar',
     source: 'spell',
     names: ['Find Familiar'],
-    text: 'Ritual, 1 time, 10 gp. Familiaren er egen deltaker med eget initiativ og egen tur. Den kan ikke angripe, men kan ta Help og levere touch-spells med sin reaction. På 0 HP forsvinner den til du kaster spellen igjen.',
-    note: 'Familiaren og valgene dens står i `familiar.ts`, ikke i `turnOptions` for karakteren.',
-    effects: [],
+    text: '1 time med spell slot, eller 1 time og 10 minutter som ritual. Familiaren er egen deltaker med eget initiativ og egen tur. Den kan ikke angripe, men kan ta Help og levere touch-spells med sin reaction. På 0 HP forsvinner den til du kaster spellen igjen. Du kan se gjennom sansene dens som bonus action.',
+    note: 'Familiaren og valgene dens står i `familiar.ts`. Karakteren får bare «Se gjennom familiaren».',
+    effects: [
+      {
+        kind: 'option',
+        option: {
+          id: 'familiar-senses',
+          rule: 'find-familiar',
+          name: 'Se gjennom familiaren',
+          cost: 'bonus',
+          text: 'Til starten av din neste tur ser og hører du det familiaren ser og hører, med sansene dens (f.eks. Darkvision). Du beholder dine egne sanser (ingen blindhet i 2024).',
+        },
+      },
+    ],
   },
   // ---------- Feats ----------
   {

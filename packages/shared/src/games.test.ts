@@ -65,6 +65,11 @@ describe('gameStateSchema', () => {
     expect(gameStateSchema.safeParse({ ...base, familiar: { ...familiar, hpRemoved: -1 } }).success).toBe(
       false,
     );
+    const eagle = { ...familiar, form: 'eagle' as const, creatureType: 'fiend' as const };
+    expect(gameStateSchema.safeParse({ ...base, familiar: eagle }).success).toBe(true);
+    expect(
+      gameStateSchema.safeParse({ ...base, familiar: { ...familiar, creatureType: 'beast' } }).success,
+    ).toBe(false);
   });
 
   it('avviser negative tall, ukjente trekk og manglende felt', () => {
