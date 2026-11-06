@@ -32,8 +32,9 @@ import { stepState } from './steps';
 import { Opt, Step, Tip } from './ui';
 
 /**
- * Familiarens tur (F3 i `docs/FAMILIAR.md`): Help øverst som anbefalt, Flyby og lignende som påminnelse,
- * bevegelse med alle typene, og reactions (Lever touch-spell, og Ink Cloud bare for Octopus).
+ * Familiarens tur (Find Familiar, se `docs/AVKLARINGER.md`): Help øverst som anbefalt, Flyby og lignende
+ * som påminnelse, bevegelse med alle typene, og reactions (Lever touch-spell, og Ink Cloud bare for
+ * Octopus).
  */
 export function FamiliarTurn({ p }: { p: Participant }) {
   const { sync } = useGameContext();

@@ -136,7 +136,7 @@ Se «Arbeidsmåte» i `CLAUDE.md`: workers per del med passende modell, uavhengi
 - **Følgesvenner:** `Companion` brukes bare for allierte som legges inn for hånd, for eksempel leiesoldater eller NPC-er. Den har fått de valgfrie feltene `canAttack` (standard sann) og `speed` (standard 30), også i Zod-skjemaet i `packages/shared`.
 - **Find Familiar** (ugla) er en egen type i `familiar.ts`, ikke en `Companion`:
   - `GameState.familiar` er `{ form, name, hpRemoved, present, creatureType? }`, og feltet er valgfritt. Uten `creatureType` gjelder Fey.
-  - Formene er data, sjekket mot SRD 5.2.1 (6. november 2026): de 11 fra spellen og 6 andre dyr med CR 0 (Eagle, Jackal, Badger, Crab, Baboon, Deer) i gruppa «spør DM». Planen står i `docs/FAMILIAR.md`.
+  - Formene er data, sjekket mot SRD 5.2.1 (6. november 2026): de 11 fra spellen og 6 andre dyr med CR 0 (Eagle, Jackal, Badger, Crab, Baboon, Deer) i gruppa «spør DM». Kilde: kapittelet «Animals» i SRD 5.2.1.
   - Status: til stede, sendt bort (kan hentes) eller forsvunnet på 0 HP (bare nytt kast). Nytt kast er ritual (gratis) eller betales som andre spells (gratis-kast først, så slot). Røkelsen for 10 GP trekkes ikke.
   - Karakteren har «Se gjennom familiaren» som bonus action. Ingen blindhet i 2024. Octopus har Ink Cloud som reaction, og «én gang per dag» telles ikke.
   - Familiaren kan aldri angripe, heller ikke med opportunity attack. Det følger av typen.
@@ -144,7 +144,7 @@ Se «Arbeidsmåte» i `CLAUDE.md`: workers per del med passende modell, uavhengi
   - På 0 HP forsvinner den uten death saves og tas ut av kampen. Help fra den fjernes.
   - Den kommer bare tilbake med `summonFamiliar`, som gir full HP. Long Rest gir full HP bare hvis den er til stede.
   - I kamp er grensen den raskeste bevegelsen formen har, og alle typene vises med `familiarSpeedText`.
-  - Følgesvenner-siden har eget kort for familiaren (F1 og F2 i `docs/FAMILIAR.md`, 6. november 2026). Kampskjermen (F3) hører til 3c.
+  - Følgesvenner-siden har eget kort for familiaren (6. november 2026). Kampskjermen (F3) kom med 3c. F4 (rydding i produksjon) trengtes ikke.
 - **Ikke kodet:** regelen om én spell med slot per tur.
 - **«Si til DM»** er tatt ut av planen og koden (6. november 2026). Appen viser tallene, men lager ikke setninger til DM.
 
@@ -242,7 +242,7 @@ Se «Arbeidsmåte» i `CLAUDE.md`: workers per del med passende modell, uavhengi
 - **Kjent:** `@dnd/server` har ikke eget `test`-skript. Bruk `npm test` fra rota eller `npx vitest run --project server`.
 - **Fase 3a er ferdig** (5. november 2026). Kataloger, evneregister, kamptilstand og `turReducer` ligger i `packages/rules`, og hver rad i «Spillregler i kampflyten» har tester. Den uavhengige valideringen fant 12 feil og mangler, og alle er rettet. Find Familiar er lagt til som egen type (6. november 2026). Lint, typecheck, test (452 tester), build og `prettier --check` går gjennom.
 - **Fase 3b er ferdig** (6. november 2026). `dd_combats`, kamp-API-et og synk mellom enheter er på plass, og `useCombat` er klar for kampskjermen. Den uavhengige valideringen fant ingen alvorlige feil. Begge funnene som var verdt å rette, er rettet: `keepalive` over 64 kB, og at PUT leser svaret i samme transaksjon. Lint, typecheck, test (482 tester), build og `prettier --check` går gjennom. Migrering `0003` kjøres automatisk ved utrulling.
-- **Familiar F1 og F2 er ferdige** (6. november 2026). Formene er rettet etter SRD 5.2.1, og Følgesvenner-siden har eget kort for familiaren. Se `docs/FAMILIAR.md`.
+- **Familiar F1 og F2 er ferdige** (6. november 2026). Formene er rettet etter SRD 5.2.1, og Følgesvenner-siden har eget kort for familiaren.
 - **Fase 3c er ferdig** (6. november 2026), med F3. Den uavhengige valideringen spilte en hel kamp i nettleseren på mobil- og laptopbredde, med omlasting og to faner. Alle 8 funn er rettet. Lint, typecheck, test (508 tester), build og `prettier --check` går gjennom.
   - Lokal database: kjør `npm run migrate` hvis `dd_combats` mangler (migrering 0003).
 - **Neste fase:** 4, kampanjeboka.
