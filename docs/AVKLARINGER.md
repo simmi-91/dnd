@@ -104,6 +104,48 @@ Se «Arbeidsmåte» i `CLAUDE.md`: workers per del med passende modell, uavhengi
   - «Nytt spill» er en dialog fra 700 px og en egen side under.
   - Synken lagrer 0,7 sekunder etter siste endring, med én PUT om gangen. Ved 409 brukes serverens tilstand. `keepalive` brukes når fanen skjules eller ved `pagehide`. Ved nettfeil prøves det igjen etter 5 sekunder.
 
+## Beslutninger under fase 3a (kataloger og tur)
+
+- **Filer** i `packages/rules/src/`: `actions.ts` (12 actions med forklaring og kostnad), `conditions.ts` (15 conditions), `features.ts` (evneregisteret, det eneste stedet evner slås opp på navn), `attack.ts`, `combat.ts` (kamptilstand, `v: 1`, ren JSON) og `turn.ts` (`turReducer`, `canDo`, `attackRoll`).
+- **Reduseren:** Hendelser som `canDo` sier nei til, endrer ingenting. En dobbel melding fra en annen enhet bruker derfor ikke action to ganger. Ressurser sjekkes bare når `ctx.resources` er gitt (fra `resourceContext`). `castsLeft` gir `null` for ubegrenset.
+- **HP:** Karakteren, kjæledyr og egne følgesvenner har HP i `GameState`. Bare fiender og NPC-er har HP i `dd_combats.state`. Conditions og exhaustion for karakteren kopieres inn ved oppsett og tilbake med `conditionsToGame`.
+- **Initiativ:** Står to likt, går den med høyest bonus først, deretter den som ble lagt inn først. Fanevalg utenom rekkefølgen (`selectTurn`) er lov og nullstiller ikke turen som er i gang.
+- **Hunter's Mark:**
+  - Kastet (`cast-hunters-mark`) og skaden (`hunters-mark`) har ulike id-er.
+  - Gratis-kast er en klasseressurs med samme navn som spellen.
+  - Skaden gjelder bare det merkede målet. Er merket uten mål, gjelder den alle.
+  - Merket kan bare flyttes når målet har 0 HP eller er ute av kampen. Er målet ikke en deltaker, sjekkes det ikke.
+- **Light og Nick:**
+  - Nick gjelder når våpenet som gjør ekstra-angrepet, har Nick (som i prototypen). Dette må sjekkes med DM.
+  - «Et annet Light-våpen» betyr en annen nøkkel, så Dagger og Dagger #2 teller som to.
+  - Avstandsvåpen med Light er lov.
+- **Ambusher's Leap** gjelder din første tur i kampen (2024), ikke runde 1. **Umbral Sight** gir advantage på alle angrep når «Mørke» er på.
+- **Help** varer til starten av hjelperens neste tur, eller til angrepet. Med `against` gjelder den bare mot den fienden. Help forsvinner når hjelperen er ute av kampen.
+- **Conditions og exhaustion:**
+  - Grappled uten kjent holder gir disadvantage på alle angrep.
+  - Å reise seg fra Prone koster halve speeden, rundet ned.
+  - Exhaustion trekker fra 5 ft per nivå på speed og −2 per nivå på d20.
+  - Dodge virker ikke når den som tok Dodge, er incapacitated eller har speed 0.
+  - Slow stables ikke. Incapacitated bryter konsentrasjonen.
+  - Treff innen 5 ft mot Paralyzed eller Unconscious er krit (`autoCrit`).
+- **Death saves:**
+  - Naturlig 1 gir to feil, og naturlig 20 gir 1 HP.
+  - Skade på 0 HP gir én feil, eller to ved krit, og Stable blir Dying igjen.
+  - En fiende på 0 HP mister konsentrasjonen uten sjekk.
+- **Bjørnene** har egen tur i initiativ (husregel). Kvitebjørn må klare Animal Handling hver tur.
+- **Følgesvenner:** `Companion` brukes bare for allierte som legges inn for hånd, for eksempel leiesoldater eller NPC-er. Den har fått de valgfrie feltene `canAttack` (standard sann) og `speed` (standard 30), også i Zod-skjemaet i `packages/shared`.
+- **Find Familiar** (ugla) er en egen type i `familiar.ts`, ikke en `Companion`:
+  - `GameState.familiar` er `{ form, name, hpRemoved, present }`, og feltet er valgfritt.
+  - Formene er data. **Tallene er ikke sjekket mot SRD 5.2.** Felt merket `uncertain` sier hva som må sjekkes.
+  - Familiaren kan aldri angripe, heller ikke med opportunity attack. Det følger av typen.
+  - Den har eget initiativ og egen tur, og Help er anbefalt. «Lever touch-spell» bruker reactionen dens, og avstanden på 100 ft sjekkes ikke.
+  - På 0 HP forsvinner den uten death saves og tas ut av kampen. Help fra den fjernes.
+  - Den kommer bare tilbake med `summonFamiliar`, som gir full HP. Long Rest gir full HP bare hvis den er til stede.
+  - I kamp brukes den raskeste bevegelsen formen har.
+  - Egen plan for familiar kommer. Følgesvenner-siden og skjermene for familiar hører til den eller til 3c.
+- **Ikke kodet:** regelen om én spell med slot per tur.
+- **«Si til DM»** er tatt ut av planen og koden (6. november 2026). Appen viser tallene, men lager ikke setninger til DM.
+
 ## Status
 
 - **Fase 0 og 1 er ferdige** (4. november 2026). Appen kjører på `https://dnd.3lin.no`, innlogging med Google virker på mobil og laptop, og push til `main` ruller ut automatisk.
@@ -128,4 +170,5 @@ Se «Arbeidsmåte» i `CLAUDE.md`: workers per del med passende modell, uavhengi
   - Lint, typecheck, test (311 tester), build og `prettier --check` går gjennom, og alle funn er rettet.
 - **Nginx på serveren** har `client_max_body_size 20m` i `server`-blokken for 443, og den gjelder også `location /`. Innliming begrenses derfor av Node (2 MB), og ingen endring trengs. Kopien i `deploy/nginx/` har 3m i `location /`, med samme virkning. Migrering `0002` kjøres automatisk ved utrulling.
 - **Kjent:** `@dnd/server` har ikke eget `test`-skript. Bruk `npm test` fra rota eller `npx vitest run --project server`.
-- **Neste fase:** 3a, kataloger og `turReducer` i `packages/rules`, i en ny tråd.
+- **Fase 3a er ferdig** (5. november 2026). Kataloger, evneregister, kamptilstand og `turReducer` ligger i `packages/rules`, og hver rad i «Spillregler i kampflyten» har tester. Den uavhengige valideringen fant 12 feil og mangler, og alle er rettet. Find Familiar er lagt til som egen type (6. november 2026). Lint, typecheck, test (452 tester), build og `prettier --check` går gjennom.
+- **Neste fase:** 3b, `dd_combats` med API og synk mellom enheter, i en ny tråd. Deretter 3c, kampskjermen.

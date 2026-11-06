@@ -54,6 +54,19 @@ describe('gameStateSchema', () => {
     expect(gameStateSchema.safeParse(state).success).toBe(true);
   });
 
+  it('familiar er valgfri, og formen må være kjent', () => {
+    const base = initialGameState(deriveCharacter(fixture('elowen-4')));
+    const familiar = { form: 'owl' as const, name: 'Ugla', hpRemoved: 0, present: true };
+    expect(gameStateSchema.safeParse(base).success).toBe(true);
+    expect(gameStateSchema.safeParse({ ...base, familiar }).success).toBe(true);
+    expect(gameStateSchema.safeParse({ ...base, familiar: { ...familiar, form: 'dragon' } }).success).toBe(
+      false,
+    );
+    expect(gameStateSchema.safeParse({ ...base, familiar: { ...familiar, hpRemoved: -1 } }).success).toBe(
+      false,
+    );
+  });
+
   it('avviser negative tall, ukjente trekk og manglende felt', () => {
     const ok = initialGameState(deriveCharacter(fixture('elowen-4')));
     expect(gameStateSchema.safeParse({ ...ok, hpRemoved: -1 }).success).toBe(false);

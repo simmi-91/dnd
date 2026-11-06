@@ -62,6 +62,7 @@ function copy(state: GameState): GameState {
       Object.entries(state.pets).map(([id, p]) => [id, { ...p, traits: [...p.traits] }]),
     ),
     companions: state.companions.map((c) => ({ ...c })),
+    ...(state.familiar ? { familiar: { ...state.familiar } } : {}),
   };
 }
 
@@ -73,10 +74,19 @@ function setCount(map: Record<string, number>, key: string, value: number): void
 
 // ---------- HP ----------
 
-/** Tar skade. Temp HP tas først, og `hpRemoved` går ikke over maks HP. */
-export function applyDamage(state: GameState, sheet: Sheet, n: number): DamageResult {
+/**
+ * Tar skade. Temp HP tas først, og `hpRemoved` går ikke over maks HP. Står karakteren alt på 0 HP,
+ * gir skaden én feilet death save (to ved kritisk treff, `crit`), og Stable blir Dying igjen.
+ */
+export function applyDamage(
+  state: GameState,
+  sheet: Sheet,
+  n: number,
+  opts: { crit?: boolean } = {},
+): DamageResult {
   const dmg = amount(n);
   const next = copy(state);
+  const wasDown = sheet.hpMax > 0 && next.hpRemoved >= sheet.hpMax;
   const absorbed = Math.min(next.tempHp, dmg);
   next.tempHp -= absorbed;
   const rest = dmg - absorbed;
@@ -84,6 +94,13 @@ export function applyDamage(state: GameState, sheet: Sheet, n: number): DamageRe
   const hpLost = Math.min(hpLeft, rest);
   next.hpRemoved = clamp(next.hpRemoved + rest, 0, sheet.hpMax);
   const atZero = next.hpRemoved >= sheet.hpMax;
+  if (wasDown && rest > 0) {
+    const ds = next.deathSaves;
+    next.deathSaves = {
+      successes: ds.successes >= 3 ? 0 : ds.successes,
+      failures: Math.min(3, ds.failures + (opts.crit ? 2 : 1)),
+    };
+  }
   return {
     state: next,
     concentrationDc: concentrationDc(dmg),
@@ -116,6 +133,41 @@ export function applyHealing(state: GameState, sheet: Sheet, n: number): GameSta
 export function setTempHp(state: GameState, n: number, opts: { replace?: boolean } = {}): GameState {
   const v = amount(n);
   return { ...copy(state), tempHp: opts.replace ? v : Math.max(state.tempHp, v) };
+}
+
+// ---------- Death saves ----------
+
+/** `up` over 0 HP, `dying` på 0 HP og ruller death saves, `stable` etter 3 suksesser, `dead` etter 3 feil. */
+export type DeathStatus = 'up' | 'dying' | 'stable' | 'dead';
+
+export function deathStatus(state: GameState, sheet: Sheet): DeathStatus {
+  if (state.deathSaves.failures >= 3) return 'dead';
+  if (sheet.hpMax <= 0 || state.hpRemoved < sheet.hpMax) return 'up';
+  return state.deathSaves.successes >= 3 ? 'stable' : 'dying';
+}
+
+/**
+ * En death save på 0 HP (2024): 10 eller mer er suksess, under 10 feil. Naturlig 1 gir to feil.
+ * Naturlig 20 gir 1 HP tilbake (death saves nullstilles). 3 suksesser: Stable. 3 feil: død.
+ * Ellers (over 0 HP, Stable eller død) endres ingenting.
+ */
+export function rollDeathSave(
+  state: GameState,
+  sheet: Sheet,
+  nat: number,
+): { state: GameState; result: 'success' | 'failure' | 'revived' | 'stable' | 'dead' | null } {
+  if (deathStatus(state, sheet) !== 'dying') return { state, result: null };
+  const d = Math.trunc(nat);
+  if (d === 20) return { state: applyHealing(state, sheet, 1), result: 'revived' };
+  const next = copy(state);
+  const ds = next.deathSaves;
+  if (d >= 10) ds.successes = Math.min(3, ds.successes + 1);
+  else ds.failures = Math.min(3, ds.failures + (d <= 1 ? 2 : 1));
+  const status = deathStatus(next, sheet);
+  return {
+    state: next,
+    result: status === 'dead' ? 'dead' : status === 'stable' ? 'stable' : d >= 10 ? 'success' : 'failure',
+  };
 }
 
 /** Nåværende HP. */
@@ -295,5 +347,7 @@ export function longRest(state: GameState, _sheet: Sheet): GameState {
   next.deathSaves = { successes: 0, failures: 0 };
   for (const p of Object.values(next.pets)) p.hpRemoved = 0;
   for (const c of next.companions) if (c.hpRemoved != null) c.hpRemoved = 0;
+  // En familiar som er til stede får full HP. En som har forsvunnet, kommer ikke tilbake av hvile.
+  if (next.familiar?.present) next.familiar.hpRemoved = 0;
   return next;
 }

@@ -1,4 +1,5 @@
-import type { Companion, GameState, PetState, PetTrait, Sheet } from '@dnd/rules';
+import { FAMILIAR_FORM_IDS } from '@dnd/rules';
+import type { Companion, FamiliarState, GameState, PetState, PetTrait, Sheet } from '@dnd/rules';
 import { z } from 'zod';
 
 // Kontrakten for spill, karakterer og spilltilstand (fase 2b). Typene i @dnd/rules er fasit.
@@ -37,8 +38,17 @@ export const companionSchema = z.object({
   hpMax: z.number().int().min(0).max(10_000).optional(),
   hpRemoved: count.optional(),
   initiativeBonus: z.number().int().min(-20).max(30),
+  canAttack: z.boolean().optional(),
+  speed: z.number().int().min(0).max(1000).optional(),
   notes: z.string().max(5000).optional(),
 }) satisfies z.ZodType<Companion>;
+
+export const familiarSchema = z.object({
+  form: z.enum(FAMILIAR_FORM_IDS),
+  name: z.string().trim().min(1).max(100),
+  hpRemoved: count,
+  present: z.boolean(),
+}) satisfies z.ZodType<FamiliarState>;
 
 const countMap = z.record(z.string().max(64), count);
 
@@ -57,6 +67,7 @@ export const gameStateSchema = z.object({
   }),
   pets: z.record(id, petStateSchema),
   companions: z.array(companionSchema).max(50),
+  familiar: familiarSchema.optional(),
 }) satisfies z.ZodType<GameState>;
 
 /** Arket fra `deriveCharacter`. Serveren lager det selv, så her sjekkes bare at det er et objekt. */

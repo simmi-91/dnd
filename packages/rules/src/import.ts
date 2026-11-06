@@ -1,5 +1,6 @@
 // Fletteregler ved import og ny henting fra D&D Beyond (UTVIKLINGSPLAN 5.2, byggebeskrivelsen «Lagring og tilstand»).
 import type { Companion } from './companions.ts';
+import type { FamiliarState } from './familiar.ts';
 import { seedPetTraits, type PetTrait } from './pets.ts';
 import type { Feature, Pet, Sheet } from './sheet.ts';
 import { counterIds } from './util.ts';
@@ -25,6 +26,8 @@ export interface GameState {
   deathSaves: { successes: number; failures: number };
   pets: Record<string, PetState>;
   companions: Companion[];
+  /** Familiar fra Find Familiar. Mangler i eldre tilstand og når spillet ikke har noen. */
+  familiar?: FamiliarState;
 }
 
 export interface MergeOptions {
@@ -117,6 +120,7 @@ export function mergeOnRefresh(prev: GameState, sheet: Sheet, opts: MergeOptions
     deathSaves: { ...prev.deathSaves },
     pets,
     companions: prev.companions.map((c) => ({ ...c })),
+    ...(prev.familiar ? { familiar: { ...prev.familiar } } : {}),
   };
 }
 

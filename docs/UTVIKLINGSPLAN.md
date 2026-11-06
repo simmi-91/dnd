@@ -8,7 +8,7 @@ Planen beskriver hva som skal bygges og i hvilken rekkefølge. Den er skrevet fo
 
 En nettside på eget subdomene som hjelper en ny D&D-spiller ved bordet. Den skal svare på to spørsmål:
 
-1. **I kamp:** Hva kan jeg gjøre nå, og hva skal jeg si til DM?
+1. **I kamp:** Hva kan jeg gjøre nå?
 2. **Mellom kamper:** Hva vet vi om questene, personene og stedene i kampanjen?
 
 Siden skal fungere like godt på mobil (én hånd ved bordet) og laptop (mer plass, flere kolonner samtidig). Data lagres på serveren, slik at det går an å bytte mellom mobil og laptop midt i en kamp.
@@ -180,7 +180,7 @@ Brukeren må lage en OAuth-klient i Google Cloud Console med det nye subdomenet 
 
 Evner skal beskrives som **data**, ikke `if (navn === …)` spredt rundt i UI-koden. Lag:
 
-- **Actionkatalog (2024):** Attack, Dash, Disengage, Dodge, Help, Hide, Influence, Magic, Ready, Search, Study, Utilize. Hver med en kort norsk forklaring, hva den koster, og en «si til DM»-mal.
+- **Actionkatalog (2024):** Attack, Dash, Disengage, Dodge, Help, Hide, Influence, Magic, Ready, Search, Study, Utilize. Hver med en kort norsk forklaring og hva den koster.
 - **Bonus Action og Reaction:** fra evner og spells (Hunter's Mark, flytt Hunter's Mark, Light-ekstraangrep, Opportunity Attack).
 - **Evneregister:** et kart fra evnenavn til effekt. Dekker minst det prototypen gjenkjenner: Extra Attack, Dread Ambusher (Dreadful Strike, Ambusher's Leap), Umbral Sight, Stalker's Flurry, Foe Slayer og Roving. Weapon Mastery (Slow, Nick, Vex, Sap, Topple, Push, Graze, Cleave). Sharpshooter. Nye klasser skal kunne legges til uten å endre UI-et.
 - **Conditions (2024):** Blinded, Charmed, Deafened, Exhaustion, Frightened, Grappled, Incapacitated, Invisible, Paralyzed, Petrified, Poisoned, Prone, Restrained, Stunned, Unconscious. Hver med en kort norsk forklaring av hva den betyr for deg.
@@ -199,7 +199,7 @@ Bygg i pergamentstilen fra `docs/design/`. Bruk en mobil-først layout med tre b
 | Nytt spill | Navn, lenke til D&D Beyond, forhåndsvisning av karakteren før lagring | Samme, i en dialog |
 | Kamp: oppsett | Initiativ per deltaker, legg til fiender/NPC-er, bryter for mørke og hvem som er med | Samme |
 | Kamp: runde | Faner per deltaker i initiativrekkefølge, festet øverst. Turen som steg 1–3 (Bevegelse, Bonus action, Action) og R (Reaction). «Avslutt tur → neste» | Tre kolonner: initiativliste med HP · valgt steg eller angrepsflyt · ark, notater eller bjørner (med faner) |
-| Angrepsflyt | Som i prototypen: våpen → d20 → total og «Si til DM» → Traff/Bom → ekstra skade → skade per type | I midtkolonnen |
+| Angrepsflyt | Som i prototypen: våpen → d20 → total → Traff/Bom → ekstra skade → skade per type | I midtkolonnen |
 | Ark | Evneverdier, saves, skills, våpen, spells, evner, «Hva skjer på neste nivå» | To kolonner |
 | Følgesvenner | Bjørnekort med trekk, HP og med i kamp av/på. Ugla og andre som legges inn for hånd | Rutenett |
 | Kampanjebok: oppslagsverk | Søk, faner for Quester/Personer/Steder/Økter, liste, deretter detaljkort | Sidemeny, liste, detalj (tre kolonner) |
@@ -209,7 +209,6 @@ Bygg i pergamentstilen fra `docs/design/`. Bruk en mobil-først layout med tre b
 Prinsipper fra prototypen som skal beholdes:
 - Valg som ikke er mulige vises grå med grunnen under.
 - Merket «Anbefalt» på det vanlige valget.
-- «Si til DM»-setningen med tallene i.
 - Innskrevne tall sjekkes: en d20 må være 1–20, og en skadegruppe må ligge mellom min og maks.
 - Paneler skjules i stedet for å fjernes, slik at et halvveis angrep beholdes ved fanebytte.
 - Kamploggen er lukket som standard.
@@ -278,7 +277,7 @@ Hver fase skal kunne rulles ut og brukes for seg.
 **Ferdig når:** Spillet «Icewind Dale» med Elowen viser de samme tallene som D&D Beyond, og et spill med en annen karakter kan opprettes.
 
 ### Fase 3 – Kamp
-- [ ] Kataloger og `turReducer` med tester for alle reglene
+- [x] Kataloger og `turReducer` med tester for alle reglene (3a)
 - [ ] `dd_combats` med synk mellom enheter
 - [ ] Oppsett, faner per deltaker, turen som steg, angrepsflyt, bjørnetur, ugla
 - [ ] Fiender og NPC-er som legges inn for hånd (navn, initiativ, eventuelt HP)

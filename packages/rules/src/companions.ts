@@ -1,4 +1,5 @@
-// Følgesvenner som legges inn for hånd (finnes ikke i D&D Beyond), f.eks. en ugle fra Find Familiar.
+// Følgesvenner som legges inn for hånd (finnes ikke i D&D Beyond), f.eks. en alliert NPC eller et dyr.
+// Familiaren fra Find Familiar har egen type, se `familiar.ts`.
 
 export interface Companion {
   id: string;
@@ -9,6 +10,10 @@ export interface Companion {
   /** Tapt HP. Brukes bare når `hpMax` er satt. */
   hpRemoved?: number;
   initiativeBonus: number;
+  /** Kan følgesvennen angripe? Mangler feltet: ja. */
+  canAttack?: boolean;
+  /** Speed i fot. Mangler feltet: 30. */
+  speed?: number;
   notes?: string;
 }
 
