@@ -146,6 +146,21 @@ Se «Arbeidsmåte» i `CLAUDE.md`: workers per del med passende modell, uavhengi
 - **Ikke kodet:** regelen om én spell med slot per tur.
 - **«Si til DM»** er tatt ut av planen og koden (6. november 2026). Appen viser tallene, men lager ikke setninger til DM.
 
+## Beslutninger under fase 3b (dd_combats og synk)
+
+- **Tabell:** `dd_combats` (migrering `0003_combats`) har også `updated_at`. `status` er `active` eller `ended`, og `active` dekker både oppsett og runder (`state.status` er `setup` eller `active`). `round` speiler `state.round` ved hver skriving.
+- **API** (`apps/server/src/routes/combat.ts`, kontrakt i `packages/shared/src/combat.ts`):
+  - `GET …/combat` gir `{ combat }`, som er null når ingen kamp pågår. Spill som ikke finnes, eller som eies av andre, gir 404.
+  - `POST …/combat` tar `{ excludeCompanions? }`. Serveren lager oppsettet med `combatFromGame` fra arket og spilltilstanden. En kamp som alt pågår, gir 409 `combat_exists` med den kampen. Start og slutt låser spillraden, så to samtidige starter gir bare én kamp.
+  - `PUT …/combat` tar `{ id, state, version }`. `id` hindrer at en gammel kamp skriver over en ny med samme versjon. 409 `version_conflict` har `combat`, som er null eller en annen kamp når kampen er avsluttet.
+  - PUT godtar ikke `state.status = ended`. Kampen avsluttes bare med `POST …/combat/end` `{ id }`. Den avslutter med det som er lagret (`endCombat`), skriver conditions og exhaustion tilbake til spilltilstanden (`conditionsToGame`) og øker begge versjonene. Kalles den to ganger, svarer den med det samme uten å skrive noe.
+- **Web:**
+  - `stateSync.ts` er gjort generisk (`VersionedSync<T>`), og `StateSync` for spilltilstanden er en underklasse. Den nye tilstanden `gone` betyr at raden er borte på serveren. Da forkastes lokale endringer, og ingenting mer lagres.
+  - `CombatStore` og `useCombat(gameId, { game })` holder rede på kampen som pågår. Den henter ved oppstart og når fanen blir synlig, og hvert 10. sekund mens en kamp pågår og fanen er synlig. `start` og `end` lagrer spilltilstanden først, og `end` bytter til den nye spilltilstanden.
+  - Avsluttes kampen eller startes en ny på en annen enhet, oppdages det ved neste henting eller PUT, og meldingen «Kampen er avsluttet på en annen enhet.» vises.
+  - `keepalive` brukes bare når kroppen er under 60 000 byte (nettleserens grense er 64 kB). Over grensen sendes en vanlig PUT.
+- **Til 3c:** Endringer som gjøres mens `end` pågår, forkastes. Lås kampskjermen mens kampen avsluttes. Starter en annen enhet en kamp mens denne ikke har noen, vises den først når fanen får fokus igjen.
+
 ## Status
 
 - **Fase 0 og 1 er ferdige** (4. november 2026). Appen kjører på `https://dnd.3lin.no`, innlogging med Google virker på mobil og laptop, og push til `main` ruller ut automatisk.
@@ -171,4 +186,5 @@ Se «Arbeidsmåte» i `CLAUDE.md`: workers per del med passende modell, uavhengi
 - **Nginx på serveren** har `client_max_body_size 20m` i `server`-blokken for 443, og den gjelder også `location /`. Innliming begrenses derfor av Node (2 MB), og ingen endring trengs. Kopien i `deploy/nginx/` har 3m i `location /`, med samme virkning. Migrering `0002` kjøres automatisk ved utrulling.
 - **Kjent:** `@dnd/server` har ikke eget `test`-skript. Bruk `npm test` fra rota eller `npx vitest run --project server`.
 - **Fase 3a er ferdig** (5. november 2026). Kataloger, evneregister, kamptilstand og `turReducer` ligger i `packages/rules`, og hver rad i «Spillregler i kampflyten» har tester. Den uavhengige valideringen fant 12 feil og mangler, og alle er rettet. Find Familiar er lagt til som egen type (6. november 2026). Lint, typecheck, test (452 tester), build og `prettier --check` går gjennom.
-- **Neste fase:** 3b, `dd_combats` med API og synk mellom enheter, i en ny tråd. Deretter 3c, kampskjermen.
+- **Fase 3b er ferdig** (6. november 2026). `dd_combats`, kamp-API-et og synk mellom enheter er på plass, og `useCombat` er klar for kampskjermen. Den uavhengige valideringen fant ingen alvorlige feil. Begge funnene som var verdt å rette, er rettet: `keepalive` over 64 kB, og at PUT leser svaret i samme transaksjon. Lint, typecheck, test (482 tester), build og `prettier --check` går gjennom. Migrering `0003` kjøres automatisk ved utrulling.
+- **Neste fase:** 3c, kampskjermen, i en ny tråd.

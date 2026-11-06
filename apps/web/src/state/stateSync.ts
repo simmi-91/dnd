@@ -1,16 +1,23 @@
 import type { GameState } from '@dnd/rules';
-import { stateConflictSchema, type GameStateEnvelope } from '@dnd/shared';
+import { stateConflictSchema } from '@dnd/shared';
 import { isApiRequestError } from '../api/client';
 import { errorMessage } from '../components/errorMessage';
 
-// Synk av spilltilstanden (UTVIKLINGSPLAN 5.3). Tilstanden holdes lokalt og lagres 0,7 sekunder etter
-// siste endring, med høyst én PUT om gangen. Endringer som kommer mens en PUT pågår, sendes i neste.
-// Ved 409 brukes serverens tilstand. Motoren er ren TypeScript, så React bare abonnerer på den.
+// Synk av data med versjon (UTVIKLINGSPLAN 5.3), brukt av spilltilstanden og kampen. Tilstanden holdes
+// lokalt og lagres 0,7 sekunder etter siste endring, med høyst én PUT om gangen. Endringer som kommer
+// mens en PUT pågår, sendes i neste. Ved 409 brukes serverens tilstand. Er raden borte på serveren
+// (f.eks. kampen er avsluttet på en annen enhet), blir `gone` sann, og lokale endringer forkastes.
+// Motoren er ren TypeScript, så React bare abonnerer på den.
 
 export type SyncStatus = 'saved' | 'saving' | 'error';
 
-export interface SyncSnapshot {
-  state: GameState;
+export interface Envelope<T> {
+  state: T;
+  version: number;
+}
+
+export interface SyncSnapshot<T = GameState> {
+  state: T;
   version: number;
   status: SyncStatus;
   /** Kort melding til brukeren, f.eks. etter en 409. */
@@ -22,17 +29,30 @@ export interface SyncSnapshot {
    * meldinger om lokale endringer kan fjernes.
    */
   replaced: number;
+  /** Raden finnes ikke lenger på serveren. Ingenting mer lagres. */
+  gone: boolean;
 }
 
-export interface StateSyncOptions {
-  initial: GameStateEnvelope;
+/** Svaret i en 409: ny tilstand, eller null hvis raden er borte. */
+export interface Conflict<T> {
+  env: Envelope<T> | null;
+  message: string;
+}
+
+export interface SyncOptions<T> {
+  initial: Envelope<T>;
   /** `keepalive` er sann når siden lukkes eller fanen skjules, så PUT-en fullføres likevel. */
-  put: (env: GameStateEnvelope, opts: { keepalive: boolean }) => Promise<GameStateEnvelope>;
-  get: () => Promise<GameStateEnvelope>;
+  put: (env: Envelope<T>, opts: { keepalive: boolean }) => Promise<{ version: number }>;
+  /** Gjeldende tilstand på serveren, eller null hvis raden er borte. */
+  get: () => Promise<Envelope<T> | null>;
+  /** Tolker kroppen i et 409-svar. Null betyr at det ikke var en versjonskonflikt. */
+  parseConflict: (body: unknown) => Conflict<T> | null;
   debounceMs?: number;
   retryMs?: number;
   /** Ny tilstand som serveren har bekreftet (lagret, hentet eller fra 409). */
-  onConfirmed?: (env: GameStateEnvelope) => void;
+  onConfirmed?: (env: Envelope<T>) => void;
+  /** Raden er borte på serveren (henting gav null, eller 409 uten tilstand). */
+  onGone?: () => void;
   /** Feil fra API-et, så 401 og sperret konto håndteres som ellers i appen. */
   onError?: (err: unknown) => void;
 }
@@ -40,8 +60,8 @@ export interface StateSyncOptions {
 export const SAVE_DEBOUNCE_MS = 700;
 const RETRY_MS = 5000;
 
-export class StateSync {
-  private state: GameState;
+export class VersionedSync<T> {
+  private state: T;
   private version: number;
   private dirty = false;
   private inFlight: Promise<void> | null = null;
@@ -51,13 +71,14 @@ export class StateSync {
   private notice: string | null = null;
   private error: string | null = null;
   private replaced = 0;
+  private gone = false;
   /** Neste PUT skal ha `keepalive` (siden lukkes eller fanen skjules). */
   private keepalive = false;
-  private snapshot: SyncSnapshot;
+  private snapshot: SyncSnapshot<T>;
   private readonly listeners = new Set<() => void>();
-  private readonly opts: StateSyncOptions;
+  private readonly opts: SyncOptions<T>;
 
-  constructor(opts: StateSyncOptions) {
+  constructor(opts: SyncOptions<T>) {
     this.opts = opts;
     this.state = opts.initial.state;
     this.version = opts.initial.version;
@@ -69,10 +90,11 @@ export class StateSync {
     return () => this.listeners.delete(listener);
   };
 
-  getSnapshot = (): SyncSnapshot => this.snapshot;
+  getSnapshot = (): SyncSnapshot<T> => this.snapshot;
 
-  /** Endrer tilstanden lokalt og lagrer etter en liten pause. */
-  update = (fn: (state: GameState) => GameState): void => {
+  /** Endrer tilstanden lokalt og lagrer etter en liten pause. Gjør ingenting når raden er borte. */
+  update = (fn: (state: T) => T): void => {
+    if (this.gone) return;
     const next = fn(this.state);
     if (next === this.state) return;
     this.state = next;
@@ -83,12 +105,13 @@ export class StateSync {
   };
 
   /** Bytter til en tilstand fra serveren, f.eks. etter «Oppdater fra D&D Beyond». */
-  replace = (env: GameStateEnvelope): void => {
+  replace = (env: Envelope<T>): void => {
     this.clearTimer();
     this.state = env.state;
     this.version = env.version;
     this.dirty = false;
     this.error = null;
+    this.gone = false;
     this.edits += 1;
     this.replaced += 1;
     this.emit();
@@ -109,14 +132,14 @@ export class StateSync {
         if (this.error) return false;
       }
     }
-    return this.error == null;
+    return this.error == null && !this.gone;
   };
 
   /** Henter tilstanden på nytt, men bare når alt er lagret. */
   refetch = async (): Promise<void> => {
-    if (!this.isIdle()) return;
+    if (!this.isIdle() || this.gone) return;
     const edits = this.edits;
-    let env: GameStateEnvelope;
+    let env: Envelope<T> | null;
     try {
       env = await this.opts.get();
     } catch (err) {
@@ -124,7 +147,11 @@ export class StateSync {
       return;
     }
     // Endret brukeren noe mens hentingen pågikk, gjelder de lokale endringene.
-    if (edits !== this.edits || !this.isIdle()) return;
+    if (edits !== this.edits || !this.isIdle() || this.gone) return;
+    if (env == null) {
+      this.markGone();
+      return;
+    }
     // Samme versjon betyr samme tilstand: ingenting er byttet ut.
     if (env.version === this.version) return;
     this.state = env.state;
@@ -160,8 +187,19 @@ export class StateSync {
     this.timer = null;
   }
 
+  private markGone(notice?: string): void {
+    this.clearTimer();
+    this.gone = true;
+    this.dirty = false;
+    this.error = null;
+    this.edits += 1;
+    if (notice) this.notice = notice;
+    this.opts.onGone?.();
+    this.emit();
+  }
+
   private send(): Promise<void> {
-    if (this.inFlight || !this.dirty) return this.inFlight ?? Promise.resolve();
+    if (this.inFlight || !this.dirty || this.gone) return this.inFlight ?? Promise.resolve();
     const sent = this.state;
     const keepalive = this.keepalive;
     this.keepalive = false;
@@ -188,17 +226,21 @@ export class StateSync {
 
   private handleError(err: unknown): void {
     if (isApiRequestError(err) && err.status === 409) {
-      const conflict = stateConflictSchema.safeParse(err.body);
-      if (conflict.success) {
+      const conflict = this.opts.parseConflict(err.body);
+      if (conflict) {
+        if (!conflict.env) {
+          this.markGone(conflict.message);
+          return;
+        }
         this.clearTimer();
-        this.state = conflict.data.state;
-        this.version = conflict.data.version;
+        this.state = conflict.env.state;
+        this.version = conflict.env.version;
         this.dirty = false;
         this.error = null;
         this.edits += 1;
         this.replaced += 1;
-        this.notice = conflict.data.message;
-        this.opts.onConfirmed?.({ state: conflict.data.state, version: conflict.data.version });
+        this.notice = conflict.message;
+        this.opts.onConfirmed?.(conflict.env);
         return;
       }
     }
@@ -216,7 +258,7 @@ export class StateSync {
     }
   }
 
-  private makeSnapshot(): SyncSnapshot {
+  private makeSnapshot(): SyncSnapshot<T> {
     const status: SyncStatus = this.error
       ? 'error'
       : this.dirty || this.inFlight || this.timer
@@ -229,6 +271,7 @@ export class StateSync {
       notice: this.notice,
       error: this.error,
       replaced: this.replaced,
+      gone: this.gone,
     };
   }
 
@@ -241,11 +284,29 @@ export class StateSync {
       prev.status === next.status &&
       prev.notice === next.notice &&
       prev.error === next.error &&
-      prev.replaced === next.replaced
+      prev.replaced === next.replaced &&
+      prev.gone === next.gone
     ) {
       return;
     }
     this.snapshot = next;
     for (const l of this.listeners) l();
+  }
+}
+
+export type StateSyncOptions = Omit<SyncOptions<GameState>, 'parseConflict'>;
+
+/** Spilltilstanden (`dd_game_state`). Raden finnes så lenge spillet finnes, så den blir aldri `gone`. */
+export class StateSync extends VersionedSync<GameState> {
+  constructor(opts: StateSyncOptions) {
+    super({
+      ...opts,
+      parseConflict: (body) => {
+        const c = stateConflictSchema.safeParse(body);
+        return c.success
+          ? { env: { state: c.data.state, version: c.data.version }, message: c.data.message }
+          : null;
+      },
+    });
   }
 }

@@ -1,7 +1,7 @@
 import { meResponseSchema, REQUESTED_WITH_HEADER, REQUESTED_WITH_VALUE } from '@dnd/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fetchMe } from './auth';
-import { api, ApiRequestError } from './client';
+import { api, ApiRequestError, KEEPALIVE_MAX_BYTES } from './client';
 
 const user = { id: 1, email: 'elin@example.com', name: 'Elin Simenstad', avatarUrl: null };
 
@@ -58,6 +58,14 @@ describe('api-klienten', () => {
     expect(init?.method).toBe('GET');
     expect(init?.credentials).toBe('same-origin');
     expect(headersOf(init)[REQUESTED_WITH_HEADER]).toBeUndefined();
+  });
+
+  it('bruker keepalive bare når kroppen er under grensen', async () => {
+    const fetchFn = mockFetch(() => new Response(null, { status: 204 }));
+    await api.put('/api/x', { a: 1 }, undefined, { keepalive: true });
+    await api.put('/api/x', { a: 'x'.repeat(KEEPALIVE_MAX_BYTES) }, undefined, { keepalive: true });
+    expect(fetchFn.mock.calls[0]![1]?.keepalive).toBe(true);
+    expect(fetchFn.mock.calls[1]![1]?.keepalive).toBeUndefined();
   });
 
   it('godtar POST uten body og uten skjema', async () => {

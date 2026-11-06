@@ -278,7 +278,7 @@ Hver fase skal kunne rulles ut og brukes for seg.
 
 ### Fase 3 – Kamp
 - [x] Kataloger og `turReducer` med tester for alle reglene (3a)
-- [ ] `dd_combats` med synk mellom enheter
+- [x] `dd_combats` med API og synk mellom enheter (3b)
 - [ ] Oppsett, faner per deltaker, turen som steg, angrepsflyt, bjørnetur, ugla
 - [ ] Fiender og NPC-er som legges inn for hånd (navn, initiativ, eventuelt HP)
 - [ ] Conditions, konsentrasjon, death saves, kamplogg

@@ -187,6 +187,7 @@ export async function deleteGame(db: Db, userId: number, gameId: number): Promis
   return db.transaction().execute(async (trx) => {
     const game = await findGame(trx, userId, gameId);
     if (!game) return false;
+    await trx.deleteFrom('dd_combats').where('game_id', '=', gameId).execute();
     await trx.deleteFrom('dd_game_state').where('game_id', '=', gameId).execute();
     await trx.deleteFrom('dd_games').where('id', '=', gameId).where('user_id', '=', userId).execute();
     await deleteCharacterIfUnused(trx, userId, game.character_id);

@@ -52,3 +52,4 @@ export const REQUESTED_WITH_VALUE = 'dnd';
 export const SESSION_COOKIE = 'dd_session';
 
 export * from './games.ts';
+export * from './combat.ts';

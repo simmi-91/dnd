@@ -84,6 +84,7 @@ export async function freshTestDb(config: Config): Promise<Db> {
 }
 
 export async function clearData(db: Db): Promise<void> {
+  await db.deleteFrom('dd_combats').execute();
   await db.deleteFrom('dd_game_state').execute();
   await db.deleteFrom('dd_games').execute();
   await db.deleteFrom('dd_characters').execute();

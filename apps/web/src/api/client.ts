@@ -25,6 +25,9 @@ export function isApiRequestError(err: unknown): err is ApiRequestError {
   return err instanceof ApiRequestError;
 }
 
+/** Grensen for keepalive-kropper, litt under 64 kB i nettleseren. */
+export const KEEPALIVE_MAX_BYTES = 60_000;
+
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 interface RequestOptions<T> {
@@ -52,6 +55,10 @@ export async function apiRequest<T = undefined>(path: string, options: RequestOp
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (method !== 'GET') headers[REQUESTED_WITH_HEADER] = REQUESTED_WITH_VALUE;
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
+  const body = options.body === undefined ? undefined : JSON.stringify(options.body);
+  // Nettleseren avviser keepalive over 64 kB (kroppen telles i byte). Da sendes en vanlig forespørsel.
+  const keepalive =
+    options.keepalive === true && (body === undefined || new Blob([body]).size <= KEEPALIVE_MAX_BYTES);
 
   let res: Response;
   try {
@@ -59,9 +66,9 @@ export async function apiRequest<T = undefined>(path: string, options: RequestOp
       method,
       headers,
       credentials: 'same-origin',
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body,
       signal: options.signal,
-      ...(options.keepalive ? { keepalive: true } : {}),
+      ...(keepalive ? { keepalive: true } : {}),
     });
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') throw err;

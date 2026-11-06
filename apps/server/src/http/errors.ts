@@ -44,6 +44,7 @@ export const ERRORS = {
     status: 409,
     message: 'Tilstanden er endret på en annen enhet. Den nyeste versjonen er hentet.',
   },
+  combat_exists: { status: 409, message: 'En kamp pågår allerede i dette spillet.' },
   not_found: { status: 404, message: 'Fant ikke ressursen' },
   payload_too_large: { status: 413, message: 'Forespørselen er for stor' },
   unsupported_media_type: { status: 415, message: 'Ukjent innholdstype' },

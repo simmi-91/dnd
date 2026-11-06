@@ -7,6 +7,7 @@ import type { SessionSettings } from './auth/session.ts';
 import type { Config } from './config.ts';
 import { createDb, type Db } from './db/index.ts';
 import { createDdbClient, type FetchLike } from './ddb/client.ts';
+import { combatRoutes } from './routes/combat.ts';
 import { gameRoutes } from './routes/games.ts';
 import { ERRORS, sendError, type ErrorCode } from './http/errors.ts';
 import { authRoutes } from './routes/auth.ts';
@@ -134,6 +135,7 @@ export async function buildApp(config: Config, deps: AppDeps = {}): Promise<Fast
     protectedScope.addHook('preHandler', createRequireAuth(db, settings));
     await protectedScope.register(meRoutes);
     await protectedScope.register(gameRoutes, { db, ddb });
+    await protectedScope.register(combatRoutes, { db });
   });
 
   if (config.webDir) await registerWeb(app, config.webDir);

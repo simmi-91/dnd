@@ -1,5 +1,5 @@
-import type { GameState, Sheet } from '@dnd/rules';
-import type { GameCover, GameStatus } from '@dnd/shared';
+import type { CombatState, GameState, Sheet } from '@dnd/rules';
+import type { CombatStatus, GameCover, GameStatus } from '@dnd/shared';
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely';
 
 /** Tidsstempel med standardverdi i databasen. Lagres som DATETIME i UTC. */
@@ -63,16 +63,30 @@ export interface DdGameStateTable {
   updated_at: DefaultTimestamp;
 }
 
+export interface DdCombatsTable {
+  id: Generated<number>;
+  game_id: number;
+  status: ColumnType<CombatStatus, CombatStatus | undefined, CombatStatus>;
+  round: ColumnType<number, number | undefined, number>;
+  state: JsonColumn<CombatState>;
+  version: ColumnType<number, number | undefined, number>;
+  started_at: DefaultTimestamp;
+  ended_at: Date | null;
+  updated_at: DefaultTimestamp;
+}
+
 export interface Database {
   dd_users: DdUsersTable;
   dd_auth_sessions: DdAuthSessionsTable;
   dd_characters: DdCharactersTable;
   dd_games: DdGamesTable;
   dd_game_state: DdGameStateTable;
+  dd_combats: DdCombatsTable;
 }
 
 export type DbCharacter = Selectable<DdCharactersTable>;
 export type DbGame = Selectable<DdGamesTable>;
+export type DbCombat = Selectable<DdCombatsTable>;
 
 export type DbUser = Selectable<DdUsersTable>;
 export type NewDbUser = Insertable<DdUsersTable>;

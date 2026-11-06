@@ -113,6 +113,21 @@ describe('migreringer', () => {
     );
   });
 
+  it('0003 lager dd_combats med nøkkel til spillet og indeks på status', async () => {
+    expect(await tableNames()).toEqual(expect.arrayContaining(['dd_combats']));
+    const { rows: fks } = await sql<{ table: string; ref: string }>`
+      SELECT TABLE_NAME AS \`table\`, REFERENCED_TABLE_NAME AS ref FROM information_schema.key_column_usage
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dd_combats' AND REFERENCED_TABLE_NAME IS NOT NULL`.execute(
+      db,
+    );
+    expect(fks).toEqual([{ table: 'dd_combats', ref: 'dd_games' }]);
+    const { rows: idx } = await sql<{ column: string }>`
+      SELECT COLUMN_NAME AS \`column\` FROM information_schema.statistics
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dd_combats'
+        AND INDEX_NAME = 'dd_combats_game_status_idx' ORDER BY SEQ_IN_INDEX`.execute(db);
+    expect(idx.map((r) => r.column)).toEqual(['game_id', 'status']);
+  });
+
   it('gjør ingenting når alt er migrert', async () => {
     const result = await migrateToLatest(db);
     expect(result.results).toEqual([]);
