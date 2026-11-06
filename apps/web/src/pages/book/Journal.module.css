@@ -1,0 +1,315 @@
+/*
+ * Dagboka. Mobil: skriveflaten fyller skjermen, med knappene under. Fra 1100 px: øktene til
+ * venstre, skriveflaten i midten og registeret til høyre.
+ */
+
+.layout {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px 14px 24px;
+}
+
+.content {
+  min-width: 0;
+}
+
+@media (min-width: 700px) {
+  .layout {
+    padding: 32px 40px;
+  }
+}
+
+.wide {
+  max-width: none;
+  display: grid;
+  grid-template-columns: minmax(170px, 210px) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+  padding: 28px 32px;
+}
+
+/* ---------- Øktene (laptop) ---------- */
+
+.nav {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.navList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.navLink {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: var(--touch);
+  padding: 6px 10px;
+  border-left: 3px solid transparent;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.navLink:hover {
+  background: var(--card);
+}
+
+.navOn,
+.navOn:hover {
+  border-left-color: var(--accent);
+  background: var(--paper);
+  font-weight: 600;
+}
+
+.navTitle {
+  font-size: 0.9rem;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Skriveflaten ---------- */
+
+.editorGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.editorWide {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+  gap: 28px;
+  align-items: start;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.date {
+  font-size: 1.6rem;
+}
+
+.allLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+}
+
+@media (min-width: 700px) {
+  .head {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .date {
+    font-size: 2rem;
+  }
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.titleField {
+  min-width: 0;
+}
+
+/* Fyller skjermen på mobil (minus overskrift, felter og bunnmeny), og vokser med teksten. */
+.surface {
+  min-height: max(14rem, calc(100dvh - 22rem));
+  font-size: 1.1rem;
+}
+
+@media (min-width: 1100px) {
+  .surface {
+    min-height: max(20rem, calc(100dvh - 16rem));
+    font-size: 1.15rem;
+  }
+}
+
+/* ---------- Registeret ---------- */
+
+.register {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-left: 20px;
+  border-left: 1px solid var(--line);
+}
+
+.registerDetails summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch);
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.registerGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.registerEmpty {
+  margin: 0;
+}
+
+.registerCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.registerList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.registerList li {
+  padding: 4px 0;
+  overflow-wrap: anywhere;
+}
+
+.registerList a {
+  display: inline-block;
+  padding: 6px 0;
+  font-weight: 600;
+}
+
+.person {
+  color: var(--person);
+}
+
+.place {
+  color: var(--place);
+}
+
+.quest {
+  color: var(--accent);
+}
+
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font: 700 0.65rem/1.4 var(--font-heading);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+
+.tag_quest {
+  background: var(--accent);
+}
+
+.tag_person {
+  background: var(--person);
+}
+
+.tag_place {
+  background: var(--place);
+}
+
+/* ---------- Lagring ---------- */
+
+/* Merket står i overskriften, så det ikke ligger over registeret eller teksten. */
+.headTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 12px;
+  min-height: 1.6rem;
+}
+
+@media (min-width: 700px) {
+  .headTop {
+    justify-content: flex-start;
+  }
+}
+
+.sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--dim);
+  font-size: 0.85rem;
+}
+
+.syncError {
+  border-color: var(--error);
+  color: var(--error);
+  font-weight: 600;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--good);
+}
+
+.dot[data-status='saving'] {
+  background: var(--bonus);
+}
+
+.dot[data-status='error'] {
+  background: var(--error);
+}
+
+.sync[data-status='saved'] {
+  animation: sync-fade 2.5s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes sync-fade {
+  0%,
+  60% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}

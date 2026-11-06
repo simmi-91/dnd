@@ -216,6 +216,63 @@ Se «Arbeidsmåte» i `CLAUDE.md`: workers per del med passende modell, uavhengi
   - Oppsett: «Rull» per deltaker og «Rull for alle uten initiativ» for den som ikke vil bruke fysisk terning.
 - **Ikke gjort:** Hurtignotat (fase 4). Death saves teller ikke automatisk ved start av turen; spilleren skriver inn kastet.
 
+## Avklart før fase 4 (6. november 2026)
+
+Anbefalingene i forberedelsen er godtatt. Deloppgavene var 4a (database, vern, tolker og kontrakt), 4b (API), 4d (oppslagsverk), 4c (dagbok) og 4e (hurtignotat), i den rekkefølgen.
+
+1. **Teksten i en kobling** er det som ble skrevet (`!finne karavanen`), lenket til oppføringen med ID. Detaljkortet viser det gjeldende navnet.
+2. **«Opprett «…»»** lagres som `@[tekst](new)`. Serveren oppretter oppføringen ved lagring og svarer med teksten der `new` er byttet med ID-en. Web tar inn serverens tekst bare hvis brukeren ikke har skrevet videre, ellers ved neste lagring.
+3. **409 på fritekst:** web beholder sin tekst, henter ny versjon og viser «Økta ble endret på en annen enhet» med *Behold min* og *Bruk den andre*.
+4. **Økta i dag:** finnes det ingen økt med dagens dato, vises en tom skriveflate. Økta opprettes ved første lagring, med neste nummer. Hurtignotatet gjør det samme.
+5. **Skriveflaten:** en kort prøve på mobil i starten av 4c. Et `textarea` med fargelag er standard hvis det holder, ellers TipTap med Mention.
+6. **Slettet oppføring:** koblinger til den vises som vanlig tekst. Arkivering er standard i UI-et, og sletting krever bekreftelse.
+7. **Typen `other`** har ikke noe tegn i dagboka og opprettes bare fra oppslagsverket.
+
+## Beslutninger under fase 4 (kampanjeboka)
+
+- **Database (`0004_campaign_book`):**
+  - Tabellene er `dd_sessions`, `dd_entries` og `dd_mentions`.
+  - `dd_mentions` har FK bare på `entry_id`, fordi kilden kan være en økt eller en oppføring. Appen sletter koblingene der en økt eller oppføring er kilde, i samme transaksjon som slettingen.
+  - Tekstkolonnene er `MEDIUMTEXT`, som er lagt til i tillatelseslisten i vernet.
+- **FULLTEXT i vernet:** migreringene får `schema.createFulltextIndex(index, table, columns)`.
+  - Den sjekker navnene strengt (indeks og tabell `^dd_[a-z0-9_]+$`, kolonner `^[a-z_][a-z0-9_]*$`) og bygger SQL-en med `sql.id`.
+  - Å la vernets plugin skrive om `createIndex().using('fulltext')` går ikke, fordi Kysely 0.29 kaster når rotnoden bytter type.
+- **Tolkeren** (`packages/shared/src/mentions.ts`):
+  - Den går i lineær tid. Teksten i en kobling er høyst 200 tegn, og alt lengre blir vanlig tekst.
+  - `formatMention` kaster i stedet for å kutte, fordi et kuttet navn ville pekt på en annen oppføring.
+  - `(new)` slås sammen uten hensyn til store og små bokstaver og mellomrom i endene.
+  - Vanlig tekst escapes ikke. Skriver brukeren selv `@[x](new)`, blir det en kobling (sjelden, godtatt).
+- **Lagring av tekst** (`apps/server/src/campaign/text.ts`):
+  - Hver skriving låser spillraden.
+  - `(new)` kobles til en eksisterende oppføring med samme type og navn (etter databasens kollasjon), ellers opprettes den.
+  - ID-er som er ukjente, hører til et annet spill eller har typen `other`, blir vanlig tekst. Prefikset rettes til typen oppføringen faktisk har.
+  - Oppføringer nevner ikke seg selv.
+  - Blir teksten over 100 000 tegn etter omskrivingen, svarer serveren 422 `body_too_long`, og ingenting lagres.
+- **Oppføringer:**
+  - `kind` kan ikke endres.
+  - ID-er i `fields` må ha riktig type (`giverEntryId` er en person, og stedfeltene er steder) og høre til samme spill.
+  - ID-er til slettede oppføringer fjernes stille ved lagring.
+- **Søk:**
+  - Ord på 3 tegn eller mer søkes med FULLTEXT i boolean mode (`ord*`), og kortere ord med `LIKE`. Treffene kombineres med OR, og det gis høyst 50.
+  - Kjent: et søk på et tall kan treffe tekster som kobler til oppføringen med den ID-en.
+- **Hurtignotat** (`POST …/sessions/today/append`): notatet legges til økta med høyest nummer for datoen, eller i en ny økt. Er dagboka åpen på en annen enhet, gir det 409-valget der, og «Behold min» fjerner da hurtignotatet.
+- **Web:**
+  - **Ruter:** `/spill/:id/bok` (`?fane=`, `?ny=`, `?rediger=1`), `/spill/:id/bok/:entryId`, `/spill/:id/dagbok` og `/spill/:id/dagbok/:sessionId`.
+  - **Uten karakter:** boka og dagboka virker også for spill uten karakter (`GameBaseContext`). Ark, Følgesvenner og Kamp ligger under `CharacterLayout`.
+  - **Editoren** (`MentionEditor`) er en `textarea` med et farget lag bak, uten ny avhengighet. Redigering inni en kobling gjør den til vanlig tekst. Den brukes i dagboka, i notatfeltet i oppføringer og i hurtignotatet.
+  - **Dagboka** er alltid redigerbar og har egen synk (`journalSync.ts`), ikke `VersionedSync`:
+    - Økta i dag opprettes ved første lagring. Før den første POST-en ser appen etter en økt med dagens dato og legger teksten til den hvis den finnes.
+    - Svar der `(new)` er byttet med ID, tas bare inn hvis brukeren ikke har skrevet videre.
+    - Når fanen skjules, sendes den siste teksten med `keepalive`.
+    - Sletting avbrytes hvis de siste endringene ikke er lagret.
+  - **Hurtignotatet** ligger i fanen Notater fra 1100 px, og under 1100 px som en flytende knapp med et ark.
+- **Kjent, ikke sjekket på ekte telefon:**
+  - om fargelaget står nøyaktig over teksten i iOS
+  - autokorrektur inni koblinger
+  - om forslagslista havner bak tastaturet
+- **Gjenstår:** skjules fanen mens den første POST-en av økta i dag pågår, kan den siste teksten etter den gå tapt.
+- **Testkjøring:** `$?` og `${PIPESTATUS}` inne i `wsl.exe … bash -ic '…'` byttes ut av det ytre skallet. Les exit-koden til `wsl.exe`.
+
 ## Status
 
 - **Fase 0 og 1 er ferdige** (4. november 2026). Appen kjører på `https://dnd.3lin.no`, innlogging med Google virker på mobil og laptop, og push til `main` ruller ut automatisk.
@@ -245,4 +302,13 @@ Se «Arbeidsmåte» i `CLAUDE.md`: workers per del med passende modell, uavhengi
 - **Familiar F1 og F2 er ferdige** (6. november 2026). Formene er rettet etter SRD 5.2.1, og Følgesvenner-siden har eget kort for familiaren.
 - **Fase 3c er ferdig** (6. november 2026), med F3. Den uavhengige valideringen spilte en hel kamp i nettleseren på mobil- og laptopbredde, med omlasting og to faner. Alle 8 funn er rettet. Lint, typecheck, test (508 tester), build og `prettier --check` går gjennom.
   - Lokal database: kjør `npm run migrate` hvis `dd_combats` mangler (migrering 0003).
-- **Neste fase:** 4, kampanjeboka.
+- **Fase 4 er ferdig** (6. november 2026). Hver deloppgave ble validert for seg, og sluttvalideringen gjennomførte «Ferdig når» i nettleseren på 390 og 1280 px:
+  - Det som skrives i dagboka, dukker opp i oppslagsverket med «Nevnt i».
+  - Søket finner både økter og oppføringer.
+  - Hurtignotat fra kampen havner i økta i dag.
+  - Alt er med etter omlasting og i en annen fane.
+  - Alle funn er rettet. De siste rettingene i hurtignotatet (rekkefølgen på lagene, luft i bunnen og fokus) er testet, men ikke sett i nettleser.
+  - Lint, typecheck, test (735 tester), build og `prettier --check` går gjennom.
+  - Migrering `0004` kjøres automatisk ved utrulling. Lokalt: `npm run migrate`.
+- **Bør prøves på ekte telefon:** fargelaget i editoren på iOS, autokorrektur og forslagslista sammen med tastaturet.
+- **Neste fase:** 5, PWA og finpuss.

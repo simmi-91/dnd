@@ -2,6 +2,7 @@ import type { DdMigration } from '../migrator.ts';
 import { usersAndSessions } from './0001_users_and_sessions.ts';
 import { charactersAndGames } from './0002_characters_and_games.ts';
 import { combats } from './0003_combats.ts';
+import { campaignBook } from './0004_campaign_book.ts';
 
 /**
  * Alle migreringer, i kode, så de virker etter bundling. Navnene sorteres alfabetisk.
@@ -11,4 +12,5 @@ export const migrations: Record<string, DdMigration> = {
   '0001_users_and_sessions': usersAndSessions,
   '0002_characters_and_games': charactersAndGames,
   '0003_combats': combats,
+  '0004_campaign_book': campaignBook,
 };

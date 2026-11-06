@@ -24,6 +24,8 @@ import { AddEnemy } from './SetupView';
 import { InfoContext, type InfoContent } from './info';
 import { InfoBox, InfoDrawer } from './InfoPanel';
 import { Toggle } from './AttackFlow';
+import { QuickNote, QuickNoteFab } from './QuickNote';
+import { useNoteState, type NoteState } from './noteState';
 
 export const LAPTOP_QUERY = '(min-width: 1100px)';
 
@@ -54,6 +56,7 @@ export function RoundView() {
   const selected = picked && picked.current === state.current ? picked.id : state.current;
   const laptop = useMediaQuery(LAPTOP_QUERY);
   const [info, setInfo] = useState<InfoContent | null>(null);
+  const note = useNoteState();
   const who = selected && order.includes(selected) ? selected : (state.current ?? order[0] ?? null);
   const complete = roundComplete(state);
   const f = sync.state.familiar;
@@ -150,8 +153,9 @@ export function RoundView() {
           {!laptop && <CombatLog />}
         </div>
 
-        {laptop && <SideColumn />}
+        {laptop && <SideColumn note={note} />}
         {!laptop && <InfoDrawer info={info} onClose={() => setInfo(null)} />}
+        {!laptop && <QuickNoteFab note={note} drawerOpen={info !== null} />}
       </div>
     </InfoContext.Provider>
   );
@@ -190,8 +194,8 @@ const SIDE_TABS = [
   ['notater', 'Notater'],
 ] as const;
 
-/** Høyre kolonne på laptop: ark, bjørner eller notater (notater kommer i fase 4). */
-function SideColumn() {
+/** Høyre kolonne på laptop: ark, bjørner eller notater. */
+function SideColumn({ note }: { note: NoteState }) {
   const { sheet, sync } = useGameContext();
   const [tab, setTab] = useState<(typeof SIDE_TABS)[number][0]>('ark');
   return (
@@ -260,7 +264,9 @@ function SideColumn() {
         </div>
       )}
       {tab === 'logg' && <LogList />}
-      {tab === 'notater' && <p className="dim">Notater kommer med kampanjeboka (fase 4).</p>}
+      <div hidden={tab !== 'notater'}>
+        <QuickNote note={note} />
+      </div>
     </aside>
   );
 }

@@ -1,5 +1,5 @@
 import type { CombatState, GameState, Sheet } from '@dnd/rules';
-import type { CombatStatus, GameCover, GameStatus } from '@dnd/shared';
+import type { CombatStatus, EntryFields, EntryKind, GameCover, GameStatus, QuestStatus } from '@dnd/shared';
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely';
 
 /** Tidsstempel med standardverdi i databasen. Lagres som DATETIME i UTC. */
@@ -75,6 +75,46 @@ export interface DdCombatsTable {
   updated_at: DefaultTimestamp;
 }
 
+/** Dagboka: én rad per økt. `body` har ingen standardverdi (TEXT), så appen setter `''`. */
+export interface DdSessionsTable {
+  id: Generated<number>;
+  game_id: number;
+  number: number;
+  /** DATE. mysql2 gir `Date` (midnatt UTC). Skriv `YYYY-MM-DD`. */
+  played_on: ColumnType<Date, Date | string, Date | string>;
+  title: ColumnType<string, string | undefined, string>;
+  body: string;
+  version: ColumnType<number, number | undefined, number>;
+  created_at: DefaultTimestamp;
+  updated_at: DefaultTimestamp;
+}
+
+/** Oppslagsverket. `status` er bare satt for quester. */
+export interface DdEntriesTable {
+  id: Generated<number>;
+  game_id: number;
+  kind: EntryKind;
+  name: string;
+  summary: ColumnType<string, string | undefined, string>;
+  body: string;
+  status: QuestStatus | null;
+  fields: JsonColumn<EntryFields>;
+  /** 0 eller 1 (TINYINT(1)). */
+  archived: ColumnType<number, number | undefined, number>;
+  version: ColumnType<number, number | undefined, number>;
+  created_at: DefaultTimestamp;
+  updated_at: DefaultTimestamp;
+}
+
+export type MentionSourceType = 'session' | 'entry';
+
+/** Koblinger fra en økt eller oppføring til en oppføring. Bygges på nytt når kilden lagres. */
+export interface DdMentionsTable {
+  source_type: MentionSourceType;
+  source_id: number;
+  entry_id: number;
+}
+
 export interface Database {
   dd_users: DdUsersTable;
   dd_auth_sessions: DdAuthSessionsTable;
@@ -82,11 +122,16 @@ export interface Database {
   dd_games: DdGamesTable;
   dd_game_state: DdGameStateTable;
   dd_combats: DdCombatsTable;
+  dd_sessions: DdSessionsTable;
+  dd_entries: DdEntriesTable;
+  dd_mentions: DdMentionsTable;
 }
 
 export type DbCharacter = Selectable<DdCharactersTable>;
 export type DbGame = Selectable<DdGamesTable>;
 export type DbCombat = Selectable<DdCombatsTable>;
+export type DbSession = Selectable<DdSessionsTable>;
+export type DbEntry = Selectable<DdEntriesTable>;
 
 export type DbUser = Selectable<DdUsersTable>;
 export type NewDbUser = Insertable<DdUsersTable>;

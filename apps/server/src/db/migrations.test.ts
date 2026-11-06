@@ -10,7 +10,7 @@ import {
   type DdMigration,
   type MigrationContext,
 } from './migrator.ts';
-import { assertMigrationQuery, ddl, TablePrefixError } from './prefix-guard.ts';
+import { assertMigrationQuery, ddl, fulltextIndexQuery, TablePrefixError } from './prefix-guard.ts';
 
 let db: Db;
 
@@ -128,6 +128,92 @@ describe('migreringer', () => {
     expect(idx.map((r) => r.column)).toEqual(['game_id', 'status']);
   });
 
+  it('0004 lager dagbok, oppslagsverk og koblinger med nøkler og FULLTEXT', async () => {
+    expect(await tableNames()).toEqual(expect.arrayContaining(['dd_sessions', 'dd_entries', 'dd_mentions']));
+
+    const { rows: stats } = await sql<{
+      table: string;
+      index: string;
+      column: string;
+      type: string;
+      nonUnique: number;
+    }>`
+      SELECT TABLE_NAME AS \`table\`, INDEX_NAME AS \`index\`, COLUMN_NAME AS \`column\`,
+        INDEX_TYPE AS type, NON_UNIQUE AS nonUnique
+      FROM information_schema.statistics
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('dd_sessions', 'dd_entries', 'dd_mentions')
+      ORDER BY TABLE_NAME, INDEX_NAME, SEQ_IN_INDEX`.execute(db);
+    const index = (t: string, i: string) => {
+      const rows = stats.filter((r) => r.table === t && r.index === i);
+      return { columns: rows.map((r) => r.column), type: rows[0]?.type, unique: rows[0]?.nonUnique === 0 };
+    };
+
+    expect(index('dd_sessions', 'dd_sessions_fulltext')).toEqual({
+      columns: ['title', 'body'],
+      type: 'FULLTEXT',
+      unique: false,
+    });
+    expect(index('dd_entries', 'dd_entries_fulltext')).toEqual({
+      columns: ['name', 'summary', 'body'],
+      type: 'FULLTEXT',
+      unique: false,
+    });
+    expect(index('dd_sessions', 'dd_sessions_game_number_unique')).toMatchObject({
+      columns: ['game_id', 'number'],
+      unique: true,
+    });
+    expect(index('dd_sessions', 'dd_sessions_game_played_idx').columns).toEqual(['game_id', 'played_on']);
+    expect(index('dd_entries', 'dd_entries_game_kind_name_unique')).toMatchObject({
+      columns: ['game_id', 'kind', 'name'],
+      unique: true,
+    });
+    expect(index('dd_entries', 'dd_entries_game_kind_idx').columns).toEqual(['game_id', 'kind', 'archived']);
+    expect(index('dd_mentions', 'PRIMARY').columns).toEqual(['source_type', 'source_id', 'entry_id']);
+    expect(index('dd_mentions', 'dd_mentions_entry_id_idx').columns).toEqual(['entry_id']);
+
+    const { rows: fks } = await sql<{ table: string; column: string; ref: string; del: string }>`
+      SELECT k.TABLE_NAME AS \`table\`, k.COLUMN_NAME AS \`column\`, k.REFERENCED_TABLE_NAME AS ref,
+        r.DELETE_RULE AS del
+      FROM information_schema.key_column_usage k
+      JOIN information_schema.referential_constraints r
+        ON r.CONSTRAINT_SCHEMA = k.TABLE_SCHEMA AND r.CONSTRAINT_NAME = k.CONSTRAINT_NAME
+      WHERE k.TABLE_SCHEMA = DATABASE() AND k.TABLE_NAME IN ('dd_sessions', 'dd_entries', 'dd_mentions')
+      ORDER BY k.TABLE_NAME`.execute(db);
+    expect(fks).toEqual([
+      { table: 'dd_entries', column: 'game_id', ref: 'dd_games', del: 'CASCADE' },
+      { table: 'dd_mentions', column: 'entry_id', ref: 'dd_entries', del: 'CASCADE' },
+      { table: 'dd_sessions', column: 'game_id', ref: 'dd_games', del: 'CASCADE' },
+    ]);
+
+    const { rows: cols } = await sql<{ table: string; column: string; type: string; nullable: string }>`
+      SELECT TABLE_NAME AS \`table\`, COLUMN_NAME AS \`column\`, COLUMN_TYPE AS type, IS_NULLABLE AS nullable
+      FROM information_schema.columns
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('dd_sessions', 'dd_entries')`.execute(db);
+    const col = (t: string, c: string) => cols.find((r) => r.table === t && r.column === c);
+    expect(col('dd_sessions', 'body')).toMatchObject({ type: 'mediumtext', nullable: 'NO' });
+    expect(col('dd_sessions', 'played_on')).toMatchObject({ type: 'date', nullable: 'NO' });
+    expect(col('dd_entries', 'archived')).toMatchObject({ type: 'tinyint(1)', nullable: 'NO' });
+    expect(col('dd_entries', 'status')).toMatchObject({ nullable: 'YES' });
+    expect(col('dd_entries', 'fields')).toMatchObject({ type: 'json', nullable: 'NO' });
+    expect(col('dd_entries', 'summary')).toMatchObject({ type: 'varchar(500)', nullable: 'NO' });
+  });
+
+  it('0004 kan rulles tilbake og inn igjen', async () => {
+    const migrator = createMigrator(db);
+    const down = await migrator.migrateDown();
+    expect(down.error).toBeUndefined();
+    expect(down.results).toEqual([
+      expect.objectContaining({ migrationName: '0004_campaign_book', status: 'Success' }),
+    ]);
+    const names = await tableNames();
+    for (const t of ['dd_sessions', 'dd_entries', 'dd_mentions']) expect(names).not.toContain(t);
+    expect(names).toContain('dd_combats');
+    const up = await migrateToLatest(db);
+    expect(up.results).toEqual([
+      expect.objectContaining({ migrationName: '0004_campaign_book', status: 'Success' }),
+    ]);
+  });
+
   it('gjør ingenting når alt er migrert', async () => {
     const result = await migrateToLatest(db);
     expect(result.results).toEqual([]);
@@ -224,6 +310,56 @@ describe('dd_-vernet', () => {
     expect(() => m.schema.alterTable('dd_ok').renameTo('dd_ok2').compile()).not.toThrow();
   });
 
+  describe('FULLTEXT', () => {
+    const ft = (index: string, table: string, columns: readonly string[]) => () =>
+      m.schema.createFulltextIndex(index, table, columns).compile();
+
+    it('bygger CREATE FULLTEXT INDEX med identifikatorer', () => {
+      const compiled = m.schema.createFulltextIndex('dd_ok_fulltext', 'dd_ok', ['title', 'body']).compile();
+      expect(compiled.sql).toBe('create fulltext index `dd_ok_fulltext` on `dd_ok` (`title`, `body`)');
+      expect(compiled.parameters).toEqual([]);
+      expect(fulltextIndexQuery('dd_i', 'dd_a', ['a']).toOperationNode().kind).toBe('RawNode');
+    });
+
+    it.each<[string, string, string, readonly string[]]>([
+      ['tabell uten dd_', 'dd_i', 'x', ['a']],
+      ['tabell som bare starter med dd', 'dd_i', 'ddx', ['a']],
+      ['tabell i annen database', 'dd_i', 'prodbase.dd_users', ['a']],
+      ['tabell i annen database med backticks', 'dd_i', 'dd_a`.`x', ['a']],
+      ['tabell med backtick', 'dd_i', 'dd_a`x', ['a']],
+      ['tabell med store bokstaver', 'dd_i', 'dd_A', ['a']],
+      ['tabell som bare er prefikset', 'dd_i', 'dd_', ['a']],
+      ['indeks uten dd_', 'i', 'dd_a', ['a']],
+      ['indeks med backtick', 'dd_i`; DROP TABLE x; --', 'dd_a', ['a']],
+      ['indeks med store bokstaver', 'dd_I', 'dd_a', ['a']],
+      ['kolonne med backtick', 'dd_i', 'dd_a', ['a`) ; DROP TABLE x; --']],
+      ['kolonne med tall først', 'dd_i', 'dd_a', ['1a']],
+      ['kolonne med tabell', 'dd_i', 'dd_a', ['x.a']],
+      ['kolonne med retning', 'dd_i', 'dd_a', ['a desc']],
+      ['kolonne med parentes', 'dd_i', 'dd_a', ['a(10)']],
+      ['tom kolonne', 'dd_i', 'dd_a', ['']],
+      ['uten kolonner', 'dd_i', 'dd_a', []],
+      ['samme kolonne to ganger', 'dd_i', 'dd_a', ['a', 'a']],
+    ])('nekter: %s', (_name, index, table, columns) => {
+      expect(ft(index, table, columns)).toThrow(TablePrefixError);
+    });
+
+    it('nekter verdier som ikke er tekst', () => {
+      expect(ft('dd_i', 'dd_a', [1 as unknown as string])).toThrow(TablePrefixError);
+      expect(ft('dd_i', 'dd_a', 'abc' as unknown as string[])).toThrow(TablePrefixError);
+      expect(ft(null as unknown as string, 'dd_a', ['a'])).toThrow(TablePrefixError);
+    });
+
+    it('createIndex med using slipper fortsatt ikke gjennom vernet', () => {
+      for (const type of ['fulltext', 'FULLTEXT', 'btree']) {
+        expect(() => m.schema.createIndex('dd_i').on('dd_a').column('a').using(type).compile()).toThrow(
+          TablePrefixError,
+        );
+      }
+      expect(raw(fulltextIndexQuery('dd_i', 'dd_a', ['a']))).toThrow(TablePrefixError);
+    });
+  });
+
   it('gir migreringene et objekt uten veier rundt vernet', () => {
     const ctx = m as unknown as Record<string, unknown>;
     for (const key of [
@@ -299,6 +435,13 @@ describe('dd_-vernet', () => {
           )
         ).error,
       ).toBeInstanceOf(TablePrefixError);
+    });
+
+    it('stopper FULLTEXT på en tabell uten dd_', async () => {
+      const result = await runBad(async (m) => {
+        await m.schema.createFulltextIndex('dd_canary_ft', 'canary_x', ['id']).execute();
+      });
+      expect(result.error).toBeInstanceOf(TablePrefixError);
     });
 
     it('har ingen executeQuery å omgå vernet med', async () => {

@@ -7,11 +7,11 @@ import { errorMessage } from '../../components/errorMessage';
 import { ErrorState, Loading } from '../../components/States';
 import { useGameState } from '../../state/useGameState';
 import { NotFoundPage } from '../NotFoundPage';
-import { GameContext } from './GameContext';
+import { GameBaseContext, GameContext, useGameBase } from './GameContext';
 import styles from './GameLayout.module.css';
 import { RefreshPanel } from './RefreshPanel';
 
-/** `/spill/:gameId/*`: henter spillet og deler arket og tilstanden med Ark og Følgesvenner. */
+/** `/spill/:gameId/*`: henter spillet og deler spillet med alle underrutene. */
 export function GameLayout() {
   const { gameId: raw } = useParams();
   const gameId = parseGameId(raw);
@@ -46,6 +46,18 @@ function GameLoader({ gameId }: { gameId: number }) {
     );
   }
 
+  if (!detail.data) return <Loading label="Henter spillet …" />;
+  return (
+    <GameBaseContext.Provider value={detail.data.game}>
+      <Outlet />
+    </GameBaseContext.Provider>
+  );
+}
+
+/** Rutene som trenger karakteren (Ark, Følgesvenner, Kamp). Uten karakter vises «Ingen karakter». */
+export function CharacterLayout() {
+  const base = useGameBase();
+  const detail = useGame(base.id);
   if (!detail.data) return <Loading label="Henter spillet …" />;
   const { game, sheet, state } = detail.data;
   if (!sheet) {

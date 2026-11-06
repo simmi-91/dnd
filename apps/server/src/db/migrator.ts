@@ -1,16 +1,27 @@
-import type { Kysely, SchemaModule } from 'kysely';
+import type { CompiledQuery, Kysely, SchemaModule } from 'kysely';
 import { Migrator, type Migration, type MigrationResultSet } from 'kysely/migration';
 import { migrations as defaultMigrations } from './migrations/index.ts';
-import { TablePrefixGuardPlugin } from './prefix-guard.ts';
+import { fulltextIndexQuery, TablePrefixGuardPlugin } from './prefix-guard.ts';
 
 export const MIGRATION_TABLE = 'dd_migrations';
 export const MIGRATION_LOCK_TABLE = 'dd_migrations_lock';
 
-/** Skjemaoperasjonene en migrering får. Alle spørringer går gjennom dd_-vernet. */
+/** En ferdig sjekket spørring som migreringen kan kjøre (eller kompilere i tester). */
+export interface CheckedQuery {
+  compile(): CompiledQuery;
+  execute(): Promise<void>;
+}
+
+/**
+ * Skjemaoperasjonene en migrering får. Alle spørringer går gjennom dd_-vernet, unntatt
+ * `createFulltextIndex`, som sjekker navnene selv (`fulltextIndexQuery`) og kaster ved feil.
+ */
 export type MigrationSchema = Pick<
   SchemaModule,
   'createTable' | 'alterTable' | 'dropTable' | 'createIndex' | 'dropIndex'
->;
+> & {
+  createFulltextIndex(index: string, table: string, columns: readonly string[]): CheckedQuery;
+};
 
 /**
  * Det migreringene får i stedet for Kysely-instansen. Det har ingen `executeQuery`,
@@ -38,6 +49,13 @@ export function createMigrationContext(db: AnyDb): MigrationContext {
       dropTable: (table: string) => schema.dropTable(table),
       createIndex: (index: string) => schema.createIndex(index),
       dropIndex: (index: string) => schema.dropIndex(index),
+      createFulltextIndex: (index: string, table: string, columns: readonly string[]): CheckedQuery => {
+        const query = fulltextIndexQuery(index, table, columns);
+        return Object.freeze({
+          compile: () => query.compile(db),
+          execute: async () => void (await query.execute(db)),
+        });
+      },
     }) as MigrationSchema,
   });
 }

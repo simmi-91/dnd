@@ -53,3 +53,5 @@ export const SESSION_COOKIE = 'dd_session';
 
 export * from './games.ts';
 export * from './combat.ts';
+export * from './mentions.ts';
+export * from './campaign.ts';

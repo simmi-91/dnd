@@ -16,10 +16,13 @@ import {
 } from '@dnd/rules';
 import type { Game } from '@dnd/shared';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it } from 'vitest';
 import elowenRaw from '../../../../../../packages/rules/fixtures/elowen-4.json';
 import type { GameStateHook } from '../../../state/useGameState';
+import { createQueryClient } from '../../../api/auth';
 import { GameContext } from '../GameContext';
 import { CombatContext } from './CombatContext';
 import { RoundView } from './RoundView';
@@ -40,6 +43,8 @@ function fight(game: GameState): CombatState {
   return startCombat(s);
 }
 
+const client = createQueryClient({ retry: false });
+
 function Harness({
   game: startGame,
   combat: startCombat,
@@ -59,26 +64,30 @@ function Harness({
     update: (fn: (s: GameState) => GameState) => setGame((s) => fn(s)),
   } as unknown as GameStateHook;
   return (
-    <GameContext.Provider value={{ game: { id: 1, name: 'Icewind Dale' } as Game, sheet, sync }}>
-      <CombatContext.Provider
-        value={{
-          state: combat,
-          dispatch: (e) => setCombat((s) => turReducer(s, e)),
-          update: (fn) => setCombat((s) => fn(s)),
-          locked: false,
-          undo: null,
-        }}
-      >
-        {setup ? (
-          <>
-            <StartButton />
-            <SetupView />
-          </>
-        ) : (
-          <RoundView />
-        )}
-      </CombatContext.Provider>
-    </GameContext.Provider>
+    <QueryClientProvider client={client}>
+      <MemoryRouter>
+        <GameContext.Provider value={{ game: { id: 1, name: 'Icewind Dale' } as Game, sheet, sync }}>
+          <CombatContext.Provider
+            value={{
+              state: combat,
+              dispatch: (e) => setCombat((s) => turReducer(s, e)),
+              update: (fn) => setCombat((s) => fn(s)),
+              locked: false,
+              undo: null,
+            }}
+          >
+            {setup ? (
+              <>
+                <StartButton />
+                <SetupView />
+              </>
+            ) : (
+              <RoundView />
+            )}
+          </CombatContext.Provider>
+        </GameContext.Provider>
+      </MemoryRouter>
+    </QueryClientProvider>
   );
 }
 

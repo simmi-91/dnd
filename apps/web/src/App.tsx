@@ -6,7 +6,9 @@ import { Shell } from './components/Shell';
 import { AccountPage } from './pages/AccountPage';
 import { LoginPage } from './pages/LoginPage';
 import { CompanionsPage } from './pages/game/CompanionsPage';
-import { GameLayout } from './pages/game/GameLayout';
+import { CharacterLayout, GameLayout } from './pages/game/GameLayout';
+import { BookPage } from './pages/book/BookPage';
+import { JournalPage } from './pages/book/JournalPage';
 import { CombatPage } from './pages/game/combat/CombatPage';
 import { SheetPage } from './pages/game/SheetPage';
 import { MyGamesPage } from './pages/MyGamesPage';
@@ -36,9 +38,13 @@ export function AppRoutes() {
         <Route path="spill/nytt" element={<NewGamePage />} />
         <Route path="spill/:gameId" element={<GameLayout />}>
           <Route index element={<Navigate to="ark" replace />} />
-          <Route path="ark" element={<SheetPage />} />
-          <Route path="folgesvenner" element={<CompanionsPage />} />
-          <Route path="kamp" element={<CombatPage />} />
+          <Route element={<CharacterLayout />}>
+            <Route path="ark" element={<SheetPage />} />
+            <Route path="folgesvenner" element={<CompanionsPage />} />
+            <Route path="kamp" element={<CombatPage />} />
+          </Route>
+          <Route path="bok/:entryId?" element={<BookPage />} />
+          <Route path="dagbok/:sessionId?" element={<JournalPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />

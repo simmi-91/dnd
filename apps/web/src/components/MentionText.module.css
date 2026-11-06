@@ -1,0 +1,30 @@
+.text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.mention {
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+}
+
+.mention:hover {
+  border-bottom-style: solid;
+}
+
+.person {
+  color: var(--person);
+}
+
+.place {
+  color: var(--place);
+}
+
+.quest {
+  color: var(--accent);
+}
+
+.other {
+  color: var(--ink);
+}

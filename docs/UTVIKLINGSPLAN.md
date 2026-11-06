@@ -287,10 +287,11 @@ Hver fase skal kunne rulles ut og brukes for seg.
 **Ferdig når:** En hel kamp kan spilles på mobil, og hvis siden lastes på nytt eller du bytter til laptop midt i runden, er alt med.
 
 ### Fase 4 – Kampanjebok
-- [ ] Tabellene `dd_sessions`, `dd_entries` og `dd_mentions`, med FULLTEXT
-- [ ] Dagbok med `@`, `#` og `!`, autofullføring og tolking på serveren
-- [ ] Oppslagsverk med detaljkort, felter og «Nevnt i økter»
-- [ ] Søk og hurtignotat fra kampskjermen
+- [x] Tabellene `dd_sessions`, `dd_entries` og `dd_mentions`, med FULLTEXT (4a)
+- [x] Dagbok med `@`, `#` og `!`, autofullføring og tolking på serveren (4b, 4c)
+- [x] Oppslagsverk med detaljkort, felter og «Nevnt i økter» (4d)
+- [x] Søk og hurtignotat fra kampskjermen (4d, 4e)
+- [x] Uavhengig validering med ekte kjøring: dagbok → oppslagsverk, søk og hurtignotat på mobil- og laptopbredde
 
 **Ferdig når:** Det som skrives i dagboka under en økt dukker opp i oppslagsverket uten ekstra arbeid.
 

@@ -1,4 +1,4 @@
-export type NavIconName = 'games' | 'account' | 'sheet' | 'companions' | 'combat';
+export type NavIconName = 'book' | 'games' | 'account' | 'sheet' | 'companions' | 'combat' | 'journal';
 
 /** Enkle strekikoner. Emoji ble ikke brukt, fordi ikke alle enheter har en emojifont. */
 export function NavIcon({ name }: { name: NavIconName }) {
@@ -43,6 +43,21 @@ export function NavIcon({ name }: { name: NavIconName }) {
           <path d="M4 4l10.5 10.5M4 4h3.5L17 13.5M4 4v3.5L13.5 17" />
           <path d="M20 4 9.5 14.5M20 4h-3.5M20 4v3.5" />
           <path d="M14 16.5l3.5 3.5M16.5 14l3.5 3.5M7.5 16.5 4 20M10 19l-3-3" />
+        </>
+      )}
+      {name === 'book' && (
+        // Oppslått bok
+        <>
+          <path d="M12 6.5C10 4.8 7 4.3 3.5 4.8v13.7c3.5-.5 6.5 0 8.5 1.7 2-1.7 5-2.2 8.5-1.7V4.8C17 4.3 14 4.8 12 6.5Z" />
+          <path d="M12 6.5v13.7" />
+        </>
+      )}
+      {name === 'journal' && (
+        // Penn og linjer
+        <>
+          <path d="M5 20.5h14" />
+          <path d="M5.5 15.5 15.8 5.2a1.9 1.9 0 0 1 2.7 2.7L8.2 18.2 4.5 19Z" />
+          <path d="M14 7l2.9 2.9" />
         </>
       )}
       {name === 'companions' && (

@@ -11,6 +11,8 @@ interface NavItem {
   short?: string;
   icon: NavIconName;
   end?: boolean;
+  /** Vises bare i sidemenyen (fra 700 px), ikke i bunnmenyen på mobil. */
+  wideOnly?: boolean;
   /** Står nederst i menyen, skilt fra resten, så den ikke trykkes på ved en feil inne i et spill. */
   bottom?: boolean;
 }
@@ -20,12 +22,13 @@ const MAIN_ITEMS: NavItem[] = [
   { to: '/konto', label: 'Konto', icon: 'account' },
 ];
 
-// Kampanjebok kommer i fase 4.
 function gameItems(id: number): NavItem[] {
   return [
     { to: `/spill/${id}/kamp`, label: 'Kamp', icon: 'combat' },
     { to: `/spill/${id}/ark`, label: 'Ark', icon: 'sheet' },
     { to: `/spill/${id}/folgesvenner`, label: 'Følgesvenner', short: 'Følge', icon: 'companions' },
+    { to: `/spill/${id}/bok`, label: 'Kampanjebok', short: 'Bok', icon: 'book' },
+    { to: `/spill/${id}/dagbok`, label: 'Dagbok', icon: 'journal', wideOnly: true },
     { to: '/', label: 'Mine spill', short: 'Spill', icon: 'games', end: true, bottom: true },
     { to: '/konto', label: 'Konto', icon: 'account', bottom: true },
   ];
@@ -55,7 +58,7 @@ export function Shell() {
         </div>
         <ul className={styles.list}>
           {items.map((item) => (
-            <li key={item.to} data-bottom={item.bottom || undefined}>
+            <li key={item.to} data-bottom={item.bottom || undefined} data-wide={item.wideOnly || undefined}>
               <NavLink to={item.to} end={item.end} className={navClass}>
                 <span className={styles.icon}>
                   <NavIcon name={item.icon} />

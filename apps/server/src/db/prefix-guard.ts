@@ -29,6 +29,7 @@ const RAW_ALLOWLIST = {
   currentTimestamp: 'CURRENT_TIMESTAMP',
   onUpdateCurrentTimestamp: 'ON UPDATE CURRENT_TIMESTAMP',
   tinyint1: 'TINYINT(1)',
+  mediumtext: 'MEDIUMTEXT',
   tableOptions: 'ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
 } as const;
 
@@ -95,6 +96,47 @@ function walk(value: unknown): void {
   }
 }
 
+// ---------- FULLTEXT ----------
+
+const IDENTIFIER = /^[a-z_][a-z0-9_]*$/;
+const DD_IDENTIFIER = /^dd_[a-z0-9_]+$/;
+
+/**
+ * `CREATE FULLTEXT INDEX` for en `dd_`-tabell. Kysely 0.29 kan ikke lage FULLTEXT-indekser, og
+ * vernet godtar ikke rå SQL, så migreringene får denne i stedet. Indeksen og tabellen må hete
+ * `dd_…`, og kolonnene må være enkle navn (`[a-z_][a-z0-9_]*`), uten database eller tabell foran.
+ * Navnene settes inn som identifikatorer med `sql.id`, aldri som tekst. Kaster `TablePrefixError`.
+ */
+export function fulltextIndexQuery(
+  index: string,
+  table: string,
+  columns: readonly string[],
+): RawBuilder<unknown> {
+  if (typeof index !== 'string' || !DD_IDENTIFIER.test(index)) {
+    throw new TablePrefixError(`FULLTEXT-indeksen «${String(index)}» må hete dd_ med a–z, 0–9 og _`);
+  }
+  if (typeof table !== 'string' || !table.startsWith(TABLE_PREFIX)) {
+    throw new TablePrefixError(`tabellen «${String(table)}» mangler prefikset`);
+  }
+  if (!DD_IDENTIFIER.test(table)) {
+    throw new TablePrefixError(`tabellen «${table}» har et ugyldig navn eller ligger i en annen database`);
+  }
+  if (!Array.isArray(columns) || columns.length === 0 || columns.length > 16) {
+    throw new TablePrefixError('FULLTEXT-indeksen må ha 1–16 kolonner');
+  }
+  for (const column of columns) {
+    if (typeof column !== 'string' || !IDENTIFIER.test(column)) {
+      throw new TablePrefixError(`FULLTEXT-indeksen har en ugyldig kolonne «${String(column)}»`);
+    }
+  }
+  if (new Set(columns).size !== columns.length) {
+    throw new TablePrefixError('FULLTEXT-indeksen har samme kolonne flere ganger');
+  }
+  return sql`create fulltext index ${sql.id(index)} on ${sql.id(table)} (${sql.join(
+    columns.map((c) => sql.id(c)),
+  )})`;
+}
+
 /** Kaster `TablePrefixError` hvis spørringen ikke er en tillatt skjemaendring på dd_-tabeller. */
 export function assertMigrationQuery(node: RootOperationNode): void {
   if (!ALLOWED_ROOTS.has(node.kind)) {
@@ -106,7 +148,8 @@ export function assertMigrationQuery(node: RootOperationNode): void {
 /**
  * Kysely-plugin som brukes på alle spørringer fra migreringene. Den slipper bare gjennom
  * CREATE/ALTER/DROP TABLE og CREATE/DROP INDEX på tabeller med `dd_`, og bare rå SQL fra
- * `ddl`. Migratorens egne spørringer mot dd_migrations går ikke gjennom den.
+ * `ddl`. Migratorens egne spørringer mot dd_migrations går ikke gjennom den, og heller ikke
+ * `fulltextIndexQuery`, som sjekker navnene selv.
  */
 export class TablePrefixGuardPlugin implements KyselyPlugin {
   transformQuery(args: PluginTransformQueryArgs): RootOperationNode {
