@@ -26,6 +26,8 @@ import {
   familiarHp,
   familiarHpMax,
   familiarParticipant,
+  familiarReminders,
+  familiarSensesText,
   familiarTurnOptions,
   healFamiliar,
   initialGameState,
@@ -377,5 +379,28 @@ describe('kast, status og skapningstype', () => {
     expect(turnOptions({ ...lego, spells: [] }).bonus.map((o) => o.id)).not.toContain('familiar-senses');
     const s = fight();
     expect(canDo(s, { who: 'char', kind: 'option', option: senses! }).ok).toBe(true);
+  });
+});
+
+describe('familiaren på kampskjermen (F3)', () => {
+  it('Flyby er påminnelse for Owl, Agile for Rat, ingen for Hawk', () => {
+    expect(familiarReminders('owl').map((t) => t.name)).toEqual(['Flyby']);
+    expect(familiarReminders('rat').map((t) => t.name)).toEqual(['Agile']);
+    expect(familiarReminders('hawk')).toEqual([]);
+  });
+
+  it('Se gjennom familiaren har sansene til formen', () => {
+    expect(familiarSensesText({ form: 'owl', name: 'Ugla' })).toBe(
+      'Til starten av din neste tur ser og hører du gjennom Ugla, med Darkvision 120 ft. Du beholder dine egne sanser.',
+    );
+    expect(familiarSensesText({ form: 'hawk', name: 'Hauk' })).toBe(
+      'Til starten av din neste tur ser og hører du gjennom Hauk. Du beholder dine egne sanser.',
+    );
+  });
+
+  it('Help står øverst og er anbefalt', () => {
+    const { actions } = familiarTurnOptions('owl');
+    expect(actions.map((a) => a.action.id)).not.toContain('attack');
+    expect(actions[0]).toMatchObject({ action: { id: 'help' }, recommended: true });
   });
 });

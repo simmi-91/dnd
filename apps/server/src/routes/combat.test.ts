@@ -5,6 +5,7 @@ import {
   combatResponseSchema,
   endCombatResponseSchema,
   gameDetailResponseSchema,
+  gamesResponseSchema,
   gameStateEnvelopeSchema,
 } from '@dnd/shared';
 import type { FastifyInstance } from 'fastify';
@@ -292,6 +293,26 @@ describe('kamp', () => {
     });
     expect(wrong.statusCode).toBe(409);
     expect(combatConflictSchema.parse(wrong.json()).combat?.id).toBe(second.id);
+  });
+
+  it('spillisten viser runden i kampen som pågår, og null etter slutt', async () => {
+    const cookie = await login();
+    const { game } = await createGame(cookie);
+    const round = async () => {
+      const list = gamesResponseSchema.parse((await call(cookie, 'GET', '/api/games')).json());
+      return list.games.find((g) => g.id === game.id)?.combatRound;
+    };
+    expect(await round()).toBeNull();
+    const combat = await start(cookie, game.id);
+    const put = await call(cookie, 'PUT', `/api/games/${game.id}/combat`, {
+      id: combat.id,
+      state: running(combat.state),
+      version: 1,
+    });
+    expect(put.statusCode, put.body).toBe(200);
+    expect(await round()).toBe(1);
+    await call(cookie, 'POST', `/api/games/${game.id}/combat/end`, { id: combat.id });
+    expect(await round()).toBeNull();
   });
 
   it('end gir 404 for ukjent kamp', async () => {

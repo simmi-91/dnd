@@ -142,6 +142,8 @@ export const gameSchema = z.object({
   character: gameCharacterSchema.nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  /** Runden i kampen som pågår. Bare i listen (GET /api/games), og null uten kamp. */
+  combatRound: z.number().int().min(0).nullable().optional(),
 });
 export type Game = z.infer<typeof gameSchema>;
 

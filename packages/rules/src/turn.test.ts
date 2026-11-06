@@ -650,3 +650,51 @@ describe('canDo generelt', () => {
     expect(canDo(fight(), { kind: 'option', option: opt(elowen, 'light-attack') }).ok).toBe(false);
   });
 });
+
+describe('Én spell slot per tur (2024)', () => {
+  const disguise = turnOptions(elowen).magic.find((o) => o.spell === 'Disguise Self');
+  const druidcraft = turnOptions(elowen).magic.find((o) => o.spell === 'Druidcraft');
+  if (!disguise || !druidcraft) throw new Error('magic');
+  /** Hunter's Mark uten gratis-kast igjen, så neste kast bruker en slot. */
+  const noFree = (): GameState => {
+    let g = game(elowen);
+    while (castCost(g, elowen, "Hunter's Mark")?.kind === 'free')
+      g = payCast(g, elowen, "Hunter's Mark").state;
+    return g;
+  };
+
+  it('spells med casting time Action står under Magic, også cantrips', () => {
+    expect(disguise).toMatchObject({ cost: 'action', spell: 'Disguise Self' });
+    expect(druidcraft.text).toBe('Cantrip.');
+    expect(resourceContext(game(elowen), elowen).slot?.[disguise.id]).toBe(true);
+    expect(resourceContext(game(elowen), elowen).slot?.[druidcraft.id]).toBeUndefined();
+  });
+
+  it('andre spell med slot samme tur er grå, cantrips og gratis-kast går', () => {
+    const g = noFree();
+    const resources = resourceContext(g, elowen);
+    expect(resources.slot?.[hmCast.id]).toBe(true);
+    let s = run(fight(), { type: 'option', option: hmCast, slot: true });
+    expect(s.participants[0]?.turn.oncePerTurn).toContain('spell-slot');
+    expect(canDo(s, { kind: 'option', option: disguise }, { resources }).reason).toBe(REASONS.oneSlot);
+    expect(canDo(s, { kind: 'option', option: druidcraft }, { resources }).ok).toBe(true);
+    // Med gratis-kast igjen teller ikke Hunter's Mark.
+    s = run(fight(), { type: 'option', option: hmCast });
+    expect(canDo(s, { kind: 'option', option: disguise }, { resources }).ok).toBe(true);
+    // Reduceren godtar ikke en andre slot i samme tur.
+    const twice = run(fight(), { type: 'option', option: hmCast, slot: true });
+    expect(run(twice, { type: 'option', option: disguise, slot: true })).toBe(twice);
+  });
+
+  it('regelen gjelder bare deltakerens egen tur, og nullstilles i neste tur', () => {
+    let s = run(fight(), { type: 'option', option: hmCast, slot: true }, { type: 'endTurn' });
+    expect(canDo(s, { who: 'char', kind: 'option', option: disguise }).reason).toBe(
+      REASONS.notTurn('Elowen'),
+    );
+    s = run(s, ...s.participants.slice(1).map((): TurnEvent => ({ type: 'endTurn' })), { type: 'nextRound' });
+    expect(s.current).toBe('char');
+    expect(
+      canDo(s, { kind: 'option', option: disguise }, { resources: resourceContext(noFree(), elowen) }).ok,
+    ).toBe(true);
+  });
+});

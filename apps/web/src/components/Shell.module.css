@@ -176,3 +176,46 @@
     --side-nav-w: 230px;
   }
 }
+
+/* Inne i et spill: «Mine spill» og «Konto» står for seg, så de ikke trykkes på ved en feil. */
+.list li[data-bottom] {
+  flex: 0.7;
+}
+
+.list li[data-bottom] .link {
+  color: var(--nav-dim);
+  font-size: 0.65rem;
+}
+
+.list li:not([data-bottom]) + li[data-bottom] {
+  margin-left: 10px;
+  border-left: 1px solid var(--ink-raised);
+  padding-left: 4px;
+}
+
+@media (min-width: 700px) {
+  .nav {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .list {
+    flex: 1;
+  }
+
+  .list li,
+  .list li[data-bottom] {
+    flex: none;
+  }
+
+  .list li[data-bottom] .link {
+    font-size: 0.85rem;
+  }
+
+  .list li:not([data-bottom]) + li[data-bottom] {
+    margin: auto 0 0;
+    padding: 12px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--ink-raised);
+  }
+}

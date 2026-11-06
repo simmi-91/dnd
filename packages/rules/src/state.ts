@@ -101,13 +101,16 @@ export function applyDamage(
       failures: Math.min(3, ds.failures + (opts.crit ? 2 : 1)),
     };
   }
+  const instantDeath = sheet.hpMax > 0 && rest - hpLost >= sheet.hpMax;
+  // Massive Damage: død med en gang. Lagres som tre feilede death saves, så `deathStatus` gir `dead`.
+  if (instantDeath) next.deathSaves = { successes: 0, failures: 3 };
   return {
     state: next,
     concentrationDc: concentrationDc(dmg),
     absorbed,
     hpLost,
     atZero,
-    instantDeath: sheet.hpMax > 0 && rest - hpLost >= sheet.hpMax,
+    instantDeath,
   };
 }
 

@@ -142,7 +142,7 @@ describe('death saves ved 0 HP', () => {
     // Temp HP tar skaden først: da blir det ingen feil.
     expect(applyDamage({ ...down(), tempHp: 5 }, elowen, 3).state.deathSaves.failures).toBe(0);
     // Skade som tar deg ned til 0 gir ingen feil.
-    expect(applyDamage(initialGameState(elowen), elowen, 100).state.deathSaves.failures).toBe(0);
+    expect(applyDamage(initialGameState(elowen), elowen, 45).state.deathSaves.failures).toBe(0);
     expect(applyHealing(down({ successes: 1, failures: 1 }), elowen, 5).deathSaves).toEqual({
       successes: 0,
       failures: 0,

@@ -201,7 +201,7 @@ describe('Ark', () => {
     expect(within(nav).getByRole('link', { name: 'Ark' })).toBeTruthy();
     expect(within(nav).getByRole('link', { name: 'Følgesvenner' })).toBeTruthy();
     expect(within(nav).getByRole('link', { name: 'Mine spill' })).toBeTruthy();
-    expect(within(nav).queryByRole('link', { name: 'Kamp' })).toBeNull();
+    expect(within(nav).getByRole('link', { name: 'Kamp' }).getAttribute('href')).toMatch(/\/kamp$/);
     await waitFor(() => expect(within(nav).getByText('Icewind Dale')).toBeTruthy());
 
     // Fasit fra D&D Beyond (se derive.fixtures.test.ts): HP 40 med 9 tapt, AC 14, Init +6.

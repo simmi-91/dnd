@@ -431,10 +431,12 @@ export interface TurnOptions {
   reactions: OptionDef[];
   /** Valg som er del av Action (Nick, Cleave). */
   part: OptionDef[];
+  /** Spells med casting time Action. De bruker Magic-actionen. */
+  magic: OptionDef[];
 }
 
-/** D&D Beyond `activation.activationType`: 3 = bonus action, 4 = reaction. */
-const SPELL_TIME_COST: Partial<Record<number, Cost>> = { 3: 'bonus', 4: 'reaction' };
+/** D&D Beyond `activation.activationType`: 1 = action, 3 = bonus action, 4 = reaction. */
+const SPELL_TIME_COST: Partial<Record<number, Cost>> = { 1: 'action', 3: 'bonus', 4: 'reaction' };
 
 function spellOption(s: Spell, cost: Cost): OptionDef {
   return {
@@ -445,14 +447,14 @@ function spellOption(s: Spell, cost: Cost): OptionDef {
     spell: s.name,
     ...(s.concentration ? { startsConcentration: s.name } : {}),
     emptyReason: 'Ingen gratis-kast eller spell slots igjen',
-    text: `Spell nivå ${s.level}${s.concentration ? ', konsentrasjon' : ''}.`,
+    text: s.level === 0 ? 'Cantrip.' : `Spell nivå ${s.level}${s.concentration ? ', konsentrasjon' : ''}.`,
   };
 }
 
 /**
  * Valgene i turen ut fra arket: actionkatalogen, bonus actions og reactions fra evner og spells.
- * Spells med casting time bonus action eller reaction som ikke har en egen regel, kommer med som
- * enkle valg.
+ * Spells med casting time action, bonus action eller reaction som ikke har en egen regel, kommer med
+ * som enkle valg. Spells med casting time action står i `magic` (Magic-actionen).
  */
 export function turnOptions(sheet: Sheet): TurnOptions {
   const options = effectsOf(activeRules(sheet), 'option').map((e) => e.option);
@@ -468,6 +470,7 @@ export function turnOptions(sheet: Sheet): TurnOptions {
     bonus: shown.filter((o) => o.cost === 'bonus'),
     reactions: shown.filter((o) => o.cost === 'reaction'),
     part: shown.filter((o) => o.cost === 'part'),
+    magic: shown.filter((o) => o.cost === 'action'),
   };
 }
 
@@ -562,14 +565,22 @@ export function payExtraDamage(game: GameState, sheet: Sheet, damage: ExtraDamag
 export interface ResourceContext {
   options: Record<string, number>;
   damage: Record<string, number>;
+  /**
+   * Valg der neste kast bruker en spell slot (ikke cantrip, og ingen gratis-kast igjen). Brukes til
+   * regelen om én spell slot per tur. Mangler kartet, sjekkes ikke regelen.
+   */
+  slot?: Record<string, boolean>;
 }
 
 export function resourceContext(game: GameState, sheet: Sheet): ResourceContext {
-  const out: ResourceContext = { options: {}, damage: {} };
-  const { bonus, reactions, part } = turnOptions(sheet);
-  for (const o of [...bonus, ...reactions, ...part]) {
-    const n = o.spell ? castsLeft(game, sheet, o.spell) : null;
+  const slot: Record<string, boolean> = {};
+  const out: ResourceContext = { options: {}, damage: {}, slot };
+  const { bonus, reactions, part, magic } = turnOptions(sheet);
+  for (const o of [...bonus, ...reactions, ...part, ...magic]) {
+    if (!o.spell) continue;
+    const n = castsLeft(game, sheet, o.spell);
     if (n != null) out.options[o.id] = n;
+    if (castCost(game, sheet, o.spell)?.kind === 'slot') slot[o.id] = true;
   }
   for (const d of extraDamageOptions(sheet)) {
     const n = d.resourceName ? resourceLeft(game, sheet, d.resourceName) : null;

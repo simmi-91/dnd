@@ -127,7 +127,13 @@ function GameCard({ game }: { game: Game }) {
   return (
     <article className={`card ${styles.card} ${archived ? styles.isArchived : ''}`} aria-labelledby={titleId}>
       <div className={styles.cover} style={coverStyle(game.cover)} aria-hidden="true" />
-      <div className="sc">{archived ? 'Arkivert' : 'Pågår'}</div>
+      <div className="sc">
+        {archived
+          ? 'Arkivert'
+          : game.combatRound != null
+            ? `Kamp pågår · runde ${game.combatRound}`
+            : 'Pågår'}
+      </div>
       <h2 id={titleId} className={styles.title}>
         {game.name}
       </h2>
@@ -141,9 +147,40 @@ function GameCard({ game }: { game: Game }) {
         </p>
       )}
       <div className={`btn-row ${styles.actions}`}>
-        <Link to={`/spill/${game.id}/ark`} className="btn btn--small" aria-label={`Åpne ${game.name}`}>
-          Åpne
-        </Link>
+        {game.combatRound != null ? (
+          // Kampen er lagret på serveren. Knappen tar deg rett tilbake til den.
+          <>
+            <Link
+              to={`/spill/${game.id}/kamp`}
+              className="btn btn--small"
+              aria-label={`Til kampen i ${game.name}`}
+            >
+              Til kampen
+            </Link>
+            <Link
+              to={`/spill/${game.id}/ark`}
+              className="btn btn--ghost btn--small"
+              aria-label={`Ark i ${game.name}`}
+            >
+              Ark
+            </Link>
+          </>
+        ) : (
+          <>
+            <Link to={`/spill/${game.id}/ark`} className="btn btn--small" aria-label={`Åpne ${game.name}`}>
+              Åpne
+            </Link>
+            {!archived && (
+              <Link
+                to={`/spill/${game.id}/kamp`}
+                className="btn btn--ghost btn--small"
+                aria-label={`Kamp i ${game.name}`}
+              >
+                Kamp
+              </Link>
+            )}
+          </>
+        )}
         <button
           type="button"
           className="btn btn--ghost btn--small"

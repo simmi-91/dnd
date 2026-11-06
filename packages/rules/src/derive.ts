@@ -30,7 +30,7 @@ import type {
   Weapon,
 } from './sheet.ts';
 import { pactSlots, spellSlots, type CasterClass } from './slots.ts';
-import { modOf, norm, slug, strip, sum } from './util.ts';
+import { modOf, norm, slug, strip, stripParagraphs, sum } from './util.ts';
 
 const ABILITY_NAME: AbilityMap<string> = {
   str: 'strength',
@@ -662,6 +662,7 @@ export function spellsOf(d: DdbCharacter, resources: Resource[], spellKeys: Map<
         concentration: !!def.concentration,
         ritual: !!def.ritual,
         time: def.activation?.activationType ?? null,
+        desc: stripParagraphs(def.description).slice(0, 4000),
       });
     }
   };

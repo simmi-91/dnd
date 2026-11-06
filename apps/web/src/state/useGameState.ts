@@ -11,6 +11,8 @@ export interface GameStateHook extends SyncSnapshot {
   replace: StateSync['replace'];
   flush: StateSync['flush'];
   clearNotice: StateSync['clearNotice'];
+  /** Henter tilstanden på nytt, men ikke hvis noe ikke er lagret ennå. */
+  refetch: StateSync['refetch'];
 }
 
 interface Options {
@@ -67,5 +69,6 @@ export function useGameState(
     replace: sync.replace,
     flush: sync.flush,
     clearNotice: sync.clearNotice,
+    refetch: sync.refetch,
   };
 }

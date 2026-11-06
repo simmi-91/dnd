@@ -1,4 +1,4 @@
-export type NavIconName = 'games' | 'account' | 'sheet' | 'companions';
+export type NavIconName = 'games' | 'account' | 'sheet' | 'companions' | 'combat';
 
 /** Enkle strekikoner. Emoji ble ikke brukt, fordi ikke alle enheter har en emojifont. */
 export function NavIcon({ name }: { name: NavIconName }) {
@@ -35,6 +35,14 @@ export function NavIcon({ name }: { name: NavIconName }) {
           <path d="M7 3.5h10.5a2 2 0 0 1 2 2v1.5H17" />
           <path d="M7 3.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7" />
           <path d="M8.5 9h7M8.5 12.5h7M8.5 16h4.5" />
+        </>
+      )}
+      {name === 'combat' && (
+        // To sverd i kryss
+        <>
+          <path d="M4 4l10.5 10.5M4 4h3.5L17 13.5M4 4v3.5L13.5 17" />
+          <path d="M20 4 9.5 14.5M20 4h-3.5M20 4v3.5" />
+          <path d="M14 16.5l3.5 3.5M16.5 14l3.5 3.5M7.5 16.5 4 20M10 19l-3-3" />
         </>
       )}
       {name === 'companions' && (

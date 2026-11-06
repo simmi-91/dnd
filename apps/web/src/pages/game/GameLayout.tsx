@@ -86,6 +86,7 @@ function SyncIndicator({ status, error }: { status: string; error: string | null
   return (
     <div
       className={`${styles.sync} ${status === 'error' ? styles.syncError : ''}`}
+      data-status={status}
       role="status"
       aria-live="polite"
       title={error ?? undefined}

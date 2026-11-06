@@ -7,6 +7,7 @@ import {
   applyPetTraits,
   concentrationDc,
   currentHp,
+  deathStatus,
   damageCompanion,
   damagePet,
   deriveCharacter,
@@ -105,6 +106,9 @@ describe('applyDamage', () => {
   it('gir død med en gang når skaden etter 0 HP er minst maks HP', () => {
     expect(applyDamage({ ...blank(), hpRemoved: 30 }, elowen, 50).instantDeath).toBe(true);
     expect(applyDamage({ ...blank(), hpRemoved: 30 }, elowen, 49).instantDeath).toBe(false);
+    // Lagres, så en død karakter ikke får death saves etter omlasting.
+    expect(deathStatus(applyDamage({ ...blank(), hpRemoved: 30 }, elowen, 50).state, elowen)).toBe('dead');
+    expect(deathStatus(applyDamage({ ...blank(), hpRemoved: 30 }, elowen, 49).state, elowen)).toBe('dying');
   });
 
   it('regner ut DC for konsentrasjon: maks av 10 og halve skaden, høyst 30', () => {

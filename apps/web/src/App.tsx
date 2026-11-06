@@ -7,6 +7,7 @@ import { AccountPage } from './pages/AccountPage';
 import { LoginPage } from './pages/LoginPage';
 import { CompanionsPage } from './pages/game/CompanionsPage';
 import { GameLayout } from './pages/game/GameLayout';
+import { CombatPage } from './pages/game/combat/CombatPage';
 import { SheetPage } from './pages/game/SheetPage';
 import { MyGamesPage } from './pages/MyGamesPage';
 import { NewGamePage } from './pages/NewGamePage';
@@ -37,6 +38,7 @@ export function AppRoutes() {
           <Route index element={<Navigate to="ark" replace />} />
           <Route path="ark" element={<SheetPage />} />
           <Route path="folgesvenner" element={<CompanionsPage />} />
+          <Route path="kamp" element={<CombatPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />

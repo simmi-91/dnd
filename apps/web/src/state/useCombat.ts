@@ -73,8 +73,17 @@ export function useCombat(gameId: number, options: Options = {}): CombatHook {
     ...snap,
     update: store.update,
     flush: store.flush,
-    start: store.start,
-    end: store.end,
+    // «Mine spill» viser om en kamp pågår, så listen hentes på nytt etter start og slutt.
+    start: async (body) => {
+      const ok = await store.start(body);
+      void qc.invalidateQueries({ queryKey: gameKeys.list() });
+      return ok;
+    },
+    end: async () => {
+      const res = await store.end();
+      void qc.invalidateQueries({ queryKey: gameKeys.list() });
+      return res;
+    },
     refetch: store.refetch,
     clearNotice: store.clearNotice,
   };

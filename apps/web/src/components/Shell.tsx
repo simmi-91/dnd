@@ -11,6 +11,8 @@ interface NavItem {
   short?: string;
   icon: NavIconName;
   end?: boolean;
+  /** Står nederst i menyen, skilt fra resten, så den ikke trykkes på ved en feil inne i et spill. */
+  bottom?: boolean;
 }
 
 const MAIN_ITEMS: NavItem[] = [
@@ -18,12 +20,14 @@ const MAIN_ITEMS: NavItem[] = [
   { to: '/konto', label: 'Konto', icon: 'account' },
 ];
 
-// Kamp og Kampanjebok kommer i fase 3 og 4.
+// Kampanjebok kommer i fase 4.
 function gameItems(id: number): NavItem[] {
   return [
+    { to: `/spill/${id}/kamp`, label: 'Kamp', icon: 'combat' },
     { to: `/spill/${id}/ark`, label: 'Ark', icon: 'sheet' },
     { to: `/spill/${id}/folgesvenner`, label: 'Følgesvenner', short: 'Følge', icon: 'companions' },
-    { to: '/', label: 'Mine spill', short: 'Spill', icon: 'games', end: true },
+    { to: '/', label: 'Mine spill', short: 'Spill', icon: 'games', end: true, bottom: true },
+    { to: '/konto', label: 'Konto', icon: 'account', bottom: true },
   ];
 }
 
@@ -51,7 +55,7 @@ export function Shell() {
         </div>
         <ul className={styles.list}>
           {items.map((item) => (
-            <li key={item.to}>
+            <li key={item.to} data-bottom={item.bottom || undefined}>
               <NavLink to={item.to} end={item.end} className={navClass}>
                 <span className={styles.icon}>
                   <NavIcon name={item.icon} />

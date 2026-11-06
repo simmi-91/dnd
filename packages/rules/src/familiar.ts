@@ -445,7 +445,7 @@ export const INK_CLOUD: OptionDef = {
 };
 
 /**
- * Familiarens valg i turen: alle actions unntatt Attack, med Help som anbefalt, og reaction-valgene.
+ * Familiarens valg i turen: alle actions unntatt Attack, med Help øverst som anbefalt, og reaction-valgene.
  * Med form tas bare reactions formen har (Ink Cloud for Octopus).
  */
 export function familiarTurnOptions(formId?: FamiliarFormId): {
@@ -454,12 +454,29 @@ export function familiarTurnOptions(formId?: FamiliarFormId): {
 } {
   const recommended: ActionId = 'help';
   return {
-    actions: ACTIONS.filter((a) => a.id !== 'attack').map((a) => ({
-      action: a,
-      recommended: a.id === recommended,
-    })),
+    actions: ACTIONS.filter((a) => a.id !== 'attack')
+      .map((a) => ({ action: a, recommended: a.id === recommended }))
+      .sort((a, b) => Number(b.recommended) - Number(a.recommended)),
     reactions: [DELIVER_TOUCH, ...(formId === 'octopus' ? [INK_CLOUD] : [])],
   };
+}
+
+/** Trekk som er verdt å huske på i turen, fordi de gjelder bevegelse (Flyby, Agile). */
+const REMINDER_TRAITS = new Set(['Flyby', 'Agile']);
+
+/** Påminnelser til familiarens tur, f.eks. Flyby for Owl. Tom liste for former uten slike trekk. */
+export function familiarReminders(formId: FamiliarFormId): { name: string; text: string }[] {
+  return FAMILIAR_FORMS[formId].traits.filter((t) => REMINDER_TRAITS.has(t.name));
+}
+
+/**
+ * Teksten på «Se gjennom familiaren» (bonus action for karakteren), med sansene til formen:
+ * «Til starten av din neste tur ser og hører du gjennom Ugla, med Darkvision 120 ft.»
+ */
+export function familiarSensesText(f: Pick<FamiliarState, 'form' | 'name'>): string {
+  const senses = FAMILIAR_FORMS[f.form].senses;
+  const withSenses = senses.length > 0 ? `, med ${senses.join(' og ')}` : '';
+  return `Til starten av din neste tur ser og hører du gjennom ${f.name}${withSenses}. Du beholder dine egne sanser.`;
 }
 
 // ---------- Tilstand i GameState ----------

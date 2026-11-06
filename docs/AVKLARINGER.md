@@ -180,6 +180,42 @@ Se «Arbeidsmåte» i `CLAUDE.md`: workers per del med passende modell, uavhengi
 - **Notater** vises som en tom fane til fase 4.
 - **Låsing** mens kampen avsluttes er greit.
 
+## Beslutninger under fase 3c (kampskjermen)
+
+- **Rute og meny:** `/spill/:id/kamp`, først i spillmenyen. Koden ligger i `apps/web/src/pages/game/combat/`.
+- **Visning:** Uten kamp vises «Start kamp» med valg av egne følgesvenner. Oppsett: initiativ per deltaker (d20 eller total fra DM), «Legg til fiende/NPC» lukket og valgfritt, mørke. Rundene: faner i initiativrekkefølge (festet øverst på mobil, liste til venstre fra 1100 px), panelet til valgt deltaker, og fra 1100 px Ark, Bjørner og Notater (tom til fase 4) til høyre. Panelene skjules i stedet for å fjernes. Fanen følger turen når den går videre, også fra en annen enhet.
+- **Turen:** Steg 1 Bevegelse, 2 Bonus action, 3 Action, R Reaction, så «Avslutt tur → neste». Valg som ikke går, er grå med grunnen under og i `title`. Mens et angrep eller en sjekk pågår, er alt annet grått.
+- **Mål er valgfrie** (Help, Hunter's Mark, angrep). Uten fiender i kampen spørres det ikke om mål. Skaden kan trekkes fra en fiende med HP med én knapp.
+- **Én spell slot per tur:** `ResourceContext.slot` sier hvilke valg som bruker en slot nå, og `oncePerTurn` får `spell-slot`. Gjelder bare i deltakerens egen tur (turobjektet nullstilles der), så reactions på andres tur sjekkes ikke. Spells med casting time Action står under «Spells (Magic)» (`turnOptions().magic`).
+- **Karakteren:** Skade på karakteren gir konsentrasjonssjekk i kampen. Faller den til 0 HP, settes Unconscious (som bryter konsentrasjonen), og death saves vises. Helbredelse fra 0 HP og naturlig 20 tar bort Unconscious.
+- **Kjæledyr og følgesvenner** med HP i spilltilstanden blir «ute av kampen» på 0 HP og kommer tilbake ved helbredelse. Fiender uten HP merkes ute for hånd.
+- **Familiaren (F3):** Help øverst som anbefalt (`familiarTurnOptions` sorterer), Flyby og Agile som påminnelse under Help (`familiarReminders`), bevegelse med `familiarSpeedText`, «Lever touch-spell» og Ink Cloud (bare Octopus) under Reaction. «Se gjennom familiaren» står under karakterens bonus actions bare når `familiarStatus` er `present`, med sansene til formen (`familiarSensesText`). Skade til 0 HP tar den ut av kampen og spillet. En familiar som kalles fram midt i kampen, kan tas med under «Flere i kampen».
+- **Avslutt kamp** står øverst og krever bekreftelse. Skjermen er låst mens kampen avsluttes.
+- **Synk under kamp:** Spilltilstanden (HP, slots, death saves, familiar) hentes hvert 10. sekund mens en kamp pågår, som kampen. Før ble den bare hentet når fanen ble synlig.
+- **Massive Damage** lagres som tre feilede death saves (`applyDamage`), så en død karakter ikke får death saves etter omlasting.
+- **En ventende konsentrasjonssjekk** gjør resten av turen grå til den er besvart. «Hopp over skaden» lukker et angrep etter «Traff» ved en feil.
+- **Loggen** merker gratis-kast og spell slot, og deltakere som legges til midt i kampen.
+- **Etter første gjennomgang (6. november 2026):**
+  - «Lagret»-merket blinker kort og forsvinner. «Lagrer …» og «Ikke lagret» blir stående.
+  - Turlinja øverst i panelet har chips for Bevegelse, Bonus action, Action og Reaction. Trykk går til steget. Den viser hva som sist skjedde (bevegelse logges også), og har «Avslutt tur» (uten navnet på neste) og «Angre».
+  - «Angre» setter kampen og spilltilstanden tilbake til før siste trykk (opptil 30 steg, bare på denne enheten). Endringer fra en annen enhet i mellomtiden kan bli overskrevet.
+  - Steg der ingenting kan velges, er lukket med grunnen, men kan åpnes. Felt som kan åpnes, har pil og ramme.
+  - Bokser for angrep, Help, Hide og mål scroller fram når de åpnes. Reaction-steget forklarer hvordan det brukes.
+  - «Hvem holder?» vises først når Grappled er på, og er valgfritt.
+  - Laptop: kamploggen er en egen fane («Logg») i høyre kolonne, så den kan stå åpen mens du spiller. På mobil ligger den nederst, lukket.
+  - «Mine spill» viser «Kamp pågår · runde N» og «Til kampen» på kortet (`combatRound` i `GET /api/games`). Uten kamp har kortet «Åpne» og «Kamp». Menyen for spillet vises fortsatt bare inne i et spill.
+  - Inne i et spill står «Mine spill» og «Konto» nederst i sidemenyen, og til høyre bak en strek i bunnmenyen på mobil, så de ikke trykkes på ved en feil.
+  - Etter hvert valg kommer en linje nederst med hva som skjedde og «Angre». Den forsvinner etter 8 s, men «Angre» står også i turlinja. Angre-historikken lagres i fanen (sessionStorage, 20 steg), så den overlever omlasting.
+  - Spells har «Hva gjør den?» med teksten fra D&D Beyond (`Spell.desc`, valgfritt felt). Ark som er regnet ut før dette, får teksten ved neste «Oppdater fra D&D Beyond».
+  - Valgene i et steg står i to kolonner når det er plass (minst 280 px per kolonne), ellers én. Action-steget har våpen, «Andre actions», og «Spells (Magic action)» med regelen om én spell slot.
+  - Våpen vises i klartekst: «+7 for å treffe · 1d8+3 piercing · rekkevidde 150 ft (lang 600 ft) · Mastery: Slow», med «Hva gjør den?».
+  - Reaction: én per runde, og kan brukes fra starten av kampen, også før første tur (2024 har ingen surprise-regel som tar den bort). Den krever ikke Ready.
+  - Spells og våpen har en rund «?»-knapp i hjørnet av kortet. Den er en egen knapp ved siden av valget, så den bruker aldri valget. Infoen vises under deltakerlisten på laptop, og i en skuff nederst på mobil og nettbrett. Skuffen kan dras større og mindre, byttes med et trykk på håndtaket, og lukkes.
+  - Bevegelse har grønn kant, så den skiller seg fra Bonus action.
+  - «Start runde 1» står øverst, til venstre for «Avslutt kamp».
+  - Oppsett: «Rull» per deltaker og «Rull for alle uten initiativ» for den som ikke vil bruke fysisk terning.
+- **Ikke gjort:** Hurtignotat (fase 4). Death saves teller ikke automatisk ved start av turen; spilleren skriver inn kastet.
+
 ## Status
 
 - **Fase 0 og 1 er ferdige** (4. november 2026). Appen kjører på `https://dnd.3lin.no`, innlogging med Google virker på mobil og laptop, og push til `main` ruller ut automatisk.
@@ -207,4 +243,6 @@ Se «Arbeidsmåte» i `CLAUDE.md`: workers per del med passende modell, uavhengi
 - **Fase 3a er ferdig** (5. november 2026). Kataloger, evneregister, kamptilstand og `turReducer` ligger i `packages/rules`, og hver rad i «Spillregler i kampflyten» har tester. Den uavhengige valideringen fant 12 feil og mangler, og alle er rettet. Find Familiar er lagt til som egen type (6. november 2026). Lint, typecheck, test (452 tester), build og `prettier --check` går gjennom.
 - **Fase 3b er ferdig** (6. november 2026). `dd_combats`, kamp-API-et og synk mellom enheter er på plass, og `useCombat` er klar for kampskjermen. Den uavhengige valideringen fant ingen alvorlige feil. Begge funnene som var verdt å rette, er rettet: `keepalive` over 64 kB, og at PUT leser svaret i samme transaksjon. Lint, typecheck, test (482 tester), build og `prettier --check` går gjennom. Migrering `0003` kjøres automatisk ved utrulling.
 - **Familiar F1 og F2 er ferdige** (6. november 2026). Formene er rettet etter SRD 5.2.1, og Følgesvenner-siden har eget kort for familiaren. Se `docs/FAMILIAR.md`.
-- **Neste fase:** 3c, kampskjermen (med F3 fra `docs/FAMILIAR.md`), i en ny tråd.
+- **Fase 3c er ferdig** (6. november 2026), med F3. Den uavhengige valideringen spilte en hel kamp i nettleseren på mobil- og laptopbredde, med omlasting og to faner. Alle 8 funn er rettet. Lint, typecheck, test (508 tester), build og `prettier --check` går gjennom.
+  - Lokal database: kjør `npm run migrate` hvis `dd_combats` mangler (migrering 0003).
+- **Neste fase:** 4, kampanjeboka.

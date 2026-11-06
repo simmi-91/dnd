@@ -12,6 +12,15 @@ const weapon = (s: Sheet, name: string) => s.weapons.find((w) => w.name === name
 describe('Elowen, Gloom Stalker Ranger 4 (fasit fra D&D Beyond-arket)', () => {
   const s = deriveCharacter(elowenRaw);
 
+  it('spells har tekst uten HTML, med avsnitt, som kampskjermen viser under «Hva gjør den?»', () => {
+    const druidcraft = s.spells.find((x) => x.name === 'Druidcraft');
+    expect(druidcraft?.desc).toMatch(/^Whispering to the spirits of nature/);
+    expect(druidcraft?.desc).not.toMatch(/<|>/);
+    // Hele teksten, med avsnitt (før ble den kuttet midt i «Fire Play»).
+    expect(druidcraft?.desc).toMatch(/\nFire Play\. You/);
+    expect(druidcraft?.desc).toMatch(/\.$/);
+  });
+
   it('evneverdier, nivå og PB', () => {
     expect(s.scores).toEqual({ str: 10, dex: 16, con: 17, int: 12, wis: 16, cha: 8 });
     expect(s.level).toBe(4);

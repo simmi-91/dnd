@@ -23,6 +23,15 @@ export function strip(html: unknown): string {
     .trim();
 }
 
+/** Som `strip`, men avsnitt og linjeskift blir til `\n`, så lengre tekster (spells) kan vises med avsnitt. */
+export function stripParagraphs(html: unknown): string {
+  return String(html ?? '')
+    .split(/<\/p>|<br\s*\/?>|\r?\n/i)
+    .map((part) => strip(part))
+    .filter(Boolean)
+    .join('\n');
+}
+
 export function modOf(score: number): number {
   return Math.floor((score - 10) / 2);
 }

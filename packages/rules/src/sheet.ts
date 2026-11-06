@@ -63,6 +63,8 @@ export interface Spell {
   concentration: boolean;
   ritual: boolean;
   time: number | null;
+  /** Kort tekst fra D&D Beyond (uten HTML). Mangler i ark som ble regnet ut før feltet kom. */
+  desc?: string;
 }
 
 export interface Resource {

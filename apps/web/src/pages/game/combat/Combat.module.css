@@ -1,0 +1,864 @@
+/* Kampskjermen. Mobil først: faner festet øverst. Laptop fra 1100 px: tre kolonner. */
+
+.page {
+  max-width: 1400px;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.round {
+  font-size: 1.4rem;
+}
+
+.lock {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.lock:disabled {
+  opacity: 0.6;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.big {
+  width: 100%;
+  min-height: 52px;
+  font-size: 1rem;
+}
+
+/* ---------- Oppsett ---------- */
+
+.initRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.initHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.initValue {
+  margin-left: auto;
+  font-size: 1.2rem;
+}
+
+.fieldset {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin: 12px 0;
+  padding: 8px 12px;
+}
+
+/* ---------- Faner og kolonner ---------- */
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tabs {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 6px 0;
+  background: var(--bg);
+}
+
+.tab {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: var(--touch);
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.tab[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+
+.tab[data-current='true'] .tabName {
+  color: var(--accent);
+}
+
+.tab[data-done='true'],
+.tab[data-defeated='true'] {
+  color: var(--dim);
+}
+
+.tabName {
+  font: 700 0.9rem/1.2 var(--font-heading);
+}
+
+.tabMeta {
+  font-size: 0.85rem;
+  color: var(--dim);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.panelTitle {
+  margin-bottom: 6px;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sideTabs {
+  display: flex;
+  gap: 4px;
+}
+
+.sideTab {
+  flex: 1;
+  min-height: var(--touch);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--ink);
+  font: 600 0.8rem/1.2 var(--font-heading);
+  cursor: pointer;
+}
+
+.sideTab[aria-selected='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+@media (min-width: 1100px) {
+  .layout {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr) 300px;
+    align-items: start;
+  }
+
+  .tabs {
+    flex-direction: column;
+    overflow: visible;
+    top: 12px;
+  }
+
+  .tab {
+    width: 100%;
+  }
+
+  .side {
+    position: sticky;
+    top: 12px;
+  }
+}
+
+/* ---------- Steg og valg ---------- */
+
+.step {
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--gold);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.step[data-tone='move'] {
+  border-left-color: var(--good);
+}
+
+.step[data-tone='bonus'] {
+  border-left-color: var(--bonus);
+}
+
+.step[data-tone='action'] {
+  border-left-color: var(--accent);
+}
+
+.step[data-tone='reaction'] {
+  border-left-color: var(--place);
+}
+
+.stepDetails {
+  display: flex;
+  flex-direction: column;
+}
+
+.stepDetails[open] > .stepHead {
+  margin-bottom: 8px;
+}
+
+.stepHead {
+  cursor: pointer;
+  list-style: none;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stepN {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  font: 700 0.8rem/1 var(--font-heading);
+}
+
+.stepTitle {
+  font-size: 1rem;
+}
+
+.hint {
+  margin-left: auto;
+  color: var(--dim);
+  font-size: 0.9rem;
+}
+
+.opt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  min-height: var(--touch);
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.opt:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.optRec {
+  border-color: var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.opt:disabled {
+  cursor: not-allowed;
+  background: transparent;
+  color: var(--dim);
+}
+
+.optTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.recChip {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: 600 0.7rem/1.4 var(--font-heading);
+  letter-spacing: 0.04em;
+}
+
+.optSub {
+  font-size: 0.95rem;
+  color: var(--dim);
+}
+
+.optWhy,
+.why {
+  font-size: 0.95rem;
+  font-style: italic;
+  color: var(--error);
+}
+
+.tip {
+  border-left: 3px solid var(--gold);
+  background: var(--paper);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+}
+
+.tip[data-tone='warn'] {
+  border-left-color: var(--miss);
+}
+
+.tip[data-tone='good'] {
+  border-left-color: var(--good);
+}
+
+.tip[data-tone='psychic'] {
+  border-left-color: var(--psychic);
+}
+
+/* ---------- Turen så langt ---------- */
+
+.econ {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.econItem {
+  min-height: 36px;
+  padding: 3px 12px;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  font-size: 0.9rem;
+}
+
+.econItem[data-used='true'] {
+  color: var(--dim);
+  text-decoration: line-through;
+}
+
+.econItem:hover {
+  border-color: var(--accent);
+}
+
+/* Turlinja: chips, siste hendelse og knappene. */
+.turnBar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+
+.last {
+  font-size: 0.95rem;
+  color: var(--ink-raised);
+}
+
+/* Faner festet øverst på mobil: hold det vi scroller til, synlig under dem. */
+.step,
+.flow {
+  scroll-margin-top: 80px;
+}
+
+.chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 0 0 10px;
+  border: 1px solid var(--good);
+  border-radius: 999px;
+  background: var(--paper);
+  font-size: 0.9rem;
+}
+
+.chip[data-tone='gold'] {
+  border-color: var(--gold);
+}
+
+.toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.toggle {
+  min-height: var(--touch);
+  padding: 6px 12px;
+  border: 1px solid var(--input-line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.toggle[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.details > summary {
+  min-height: var(--touch);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  cursor: pointer;
+  list-style: none;
+  font: 600 0.9rem/1.2 var(--font-heading);
+  color: var(--accent);
+}
+
+.details > summary::-webkit-details-marker,
+.stepHead::-webkit-details-marker {
+  display: none;
+}
+
+/* Pil som viser at feltet kan åpnes. */
+.details > summary::before,
+.stepHead::after {
+  content: '▸';
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+.details[open] > summary::before,
+.stepDetails[open] > .stepHead::after {
+  transform: rotate(90deg);
+}
+
+.details > summary:hover {
+  border-color: var(--accent);
+}
+
+.details[open] > summary {
+  margin-bottom: 10px;
+}
+
+.plain {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.plainGrid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2px 10px;
+  font-size: 0.95rem;
+}
+
+/* ---------- Terninger og angrep ---------- */
+
+.flow {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-color: var(--accent);
+}
+
+.flowHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.entry {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.entryRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.op {
+  min-height: var(--touch);
+  display: inline-flex;
+  align-items: center;
+  color: var(--dim);
+}
+
+.total {
+  min-height: var(--touch);
+  display: inline-flex;
+  align-items: center;
+  font: 700 1.5rem/1 var(--font-heading);
+}
+
+.total[data-dim='true'] {
+  color: var(--dim);
+}
+
+.rollRow {
+  font-size: 1.05rem;
+}
+
+.diceLine[data-tone='gold'] :global(.field__label) {
+  color: var(--bonus);
+}
+
+.sumRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+
+.parts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.parts li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+}
+
+.good {
+  color: var(--good);
+  font-weight: 700;
+}
+
+.bad {
+  color: var(--error);
+  font-weight: 700;
+}
+
+.hpNum[data-tone='good'],
+.total[data-tone='good'] {
+  color: var(--good);
+}
+
+.hpNum[data-tone='mid'] {
+  color: var(--hp-mid);
+}
+
+.hpNum[data-tone='low'],
+.total[data-tone='low'] {
+  color: var(--error);
+}
+
+/* ---------- HP ---------- */
+
+.hpCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hpRow {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hpNum {
+  font: 700 1.8rem/1 var(--font-heading);
+}
+
+/* ---------- Logg ---------- */
+
+.log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 20rem;
+  overflow-y: auto;
+  font-size: 0.95rem;
+}
+
+.log li {
+  padding: 3px 0;
+  border-bottom: 1px dotted var(--line-soft);
+}
+
+.logRound {
+  font: 600 0.75rem/1 var(--font-heading);
+  color: var(--accent);
+}
+
+/* Knappene i oppsettet: litt luft, og like høye. */
+.setupActions {
+  margin-top: 10px;
+  align-items: stretch;
+}
+
+.setupActions > * {
+  min-height: var(--touch);
+  margin: 0;
+}
+
+/* Angrelinja: nederst på skjermen (over bunnmenyen på mobil) etter hvert valg. Forsvinner etter 8 s. */
+.snack {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 12px);
+  z-index: 20;
+  transform: translateX(-50%);
+  width: min(560px, calc(100% - 24px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 14px;
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 0 4px 14px var(--shadow);
+  animation: snack-hide 8s ease forwards;
+}
+
+.snack:hover,
+.snack:focus-within {
+  animation-play-state: paused;
+}
+
+.snackText {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes snack-hide {
+  0%,
+  85% {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@media (min-width: 700px) {
+  .snack {
+    bottom: 20px;
+    left: calc(50% + var(--side-nav-w) / 2);
+  }
+}
+
+/* «Hva gjør den?» under et valg. */
+.optWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.info > summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--accent);
+  padding: 4px 2px;
+}
+
+.info p {
+  font-size: 0.95rem;
+  padding: 4px 12px 8px;
+}
+.info p {
+  white-space: pre-line;
+}
+
+/* Valgene i et steg: to kolonner (eller flere) når det er plass, én på mobil. Tekster og bokser går over
+   hele bredden. */
+.stepBody {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+
+.stepBody > :not(.opt):not(.optWrap) {
+  grid-column: 1 / -1;
+}
+
+.groupHead {
+  margin-top: 6px;
+}
+
+/* ---------- Infoknappen og infopanelet ---------- */
+
+.optWrap {
+  position: relative;
+}
+
+/* Plass til «?»-knappen i hjørnet. */
+.optWithInfo {
+  padding-right: 48px;
+}
+
+.infoBtn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--input-line);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--accent);
+  font: 700 1rem/1 var(--font-heading);
+  cursor: pointer;
+}
+
+.infoBtn:hover {
+  border-color: var(--accent);
+  background: var(--paper);
+}
+
+/* Mobil: venstrekolonnen finnes ikke, fanene ligger rett i oppsettet (festet øverst). */
+.leftColMobile {
+  display: contents;
+}
+
+.leftCol {
+  position: sticky;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+}
+
+.leftCol > .tabs {
+  position: static;
+}
+
+.infoBox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-color: var(--accent);
+}
+
+.infoHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.infoClose {
+  min-width: 36px;
+  min-height: 36px;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.infoText {
+  white-space: pre-line;
+  font-size: 0.95rem;
+}
+
+/* Skuffen nederst på mobil og nettbrett. Høyden settes av brukeren (dra i håndtaket). */
+.drawer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px 12px;
+  border-top: 2px solid var(--accent);
+  border-radius: 14px 14px 0 0;
+  background: var(--card);
+  box-shadow: 0 -6px 18px var(--shadow);
+}
+
+.drawerHandle {
+  align-self: center;
+  width: 100%;
+  min-height: 28px;
+  border: 0;
+  background: none;
+  cursor: ns-resize;
+  touch-action: none;
+  display: grid;
+  place-items: center;
+}
+
+.drawerHandle span {
+  width: 48px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--line);
+}
+
+.drawerText {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+@media (min-width: 700px) {
+  .drawer {
+    bottom: 0;
+    left: var(--side-nav-w);
+  }
+}

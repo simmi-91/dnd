@@ -279,9 +279,10 @@ Hver fase skal kunne rulles ut og brukes for seg.
 ### Fase 3 – Kamp
 - [x] Kataloger og `turReducer` med tester for alle reglene (3a)
 - [x] `dd_combats` med API og synk mellom enheter (3b)
-- [ ] Oppsett, faner per deltaker, turen som steg, angrepsflyt, bjørnetur, ugla
-- [ ] Fiender og NPC-er som legges inn for hånd (navn, initiativ, eventuelt HP)
-- [ ] Conditions, konsentrasjon, death saves, kamplogg
+- [x] Oppsett, faner per deltaker, turen som steg, angrepsflyt, bjørnetur, ugla (3c, F3)
+- [x] Fiender og NPC-er som legges inn for hånd (navn, initiativ, eventuelt HP) (3c)
+- [x] Conditions, konsentrasjon, death saves, kamplogg (3c)
+- [x] Uavhengig validering med ekte kjøring: en hel kamp på mobil, omlasting og bytte til laptop midt i runden
 
 **Ferdig når:** En hel kamp kan spilles på mobil, og hvis siden lastes på nytt eller du bytter til laptop midt i runden, er alt med.
 

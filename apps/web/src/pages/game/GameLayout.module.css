@@ -53,3 +53,20 @@
     right: 18px;
   }
 }
+
+/* «Lagret» vises kort og forsvinner, så merket ikke ligger over innholdet. «Lagrer …» og feil blir stående. */
+.sync[data-status='saved'] {
+  animation: sync-fade 2.5s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes sync-fade {
+  0%,
+  60% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}

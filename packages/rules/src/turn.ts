@@ -117,7 +117,14 @@ export const REASONS = {
   familiarOnly: 'Bare familiaren kan gjøre dette',
   familiarForm: (f: string) => `Bare familiaren i formen ${f} kan gjøre dette`,
   standUpCost: (n: number) => `Å reise seg koster ${n} ft, og du har ikke nok bevegelse igjen`,
+  oneSlot: 'Du har alt brukt en spell slot denne turen. Cantrips og gratis-kast går fortsatt.',
 } as const;
+
+/** Hjelpeteksten ved spells. */
+export const SLOT_RULE_TEXT = 'Bare én spell slot per tur. Cantrips og gratis-kast teller ikke.';
+
+/** Merket i `TurnState.oncePerTurn` når en spell slot er brukt i deltakerens egen tur. */
+export const SPELL_SLOT_USED = 'spell-slot';
 
 const OK: CanDo = { ok: true, reason: null };
 const no = (reason: string): CanDo => ({ ok: false, reason });
@@ -269,6 +276,9 @@ export function canDo(state: CombatState, option: TurnOption, ctx: TurnContext =
         if (marked && !isDown(marked)) return no(REASONS.targetUp(conc.spell ?? '', marked.name));
       }
       if (ctx.resources?.options[o.id] === 0) return no(o.emptyReason ?? REASONS.empty(o.name));
+      // Én spell slot per tur. Bare i deltakerens egen tur, for turobjektet nullstilles der.
+      if (ctx.resources?.slot?.[o.id] && state.current === p.id && t.oncePerTurn.includes(SPELL_SLOT_USED))
+        return no(REASONS.oneSlot);
       return OK;
     }
     case 'extraDamage': {
@@ -414,8 +424,18 @@ export type TurnEvent =
       target?: string | null;
       enemy?: string | null;
     }
-  /** Et valg fra evnene (bonus action, reaction). `target` er målet, f.eks. for Hunter's Mark. */
-  | { type: 'option'; who?: string; option: OptionDef; target?: string | null }
+  /**
+   * Et valg fra evnene (bonus action, reaction, spells). `target` er målet, f.eks. for Hunter's Mark.
+   * `slot`: kastet brukte en spell slot (regelen om én spell slot per tur). `free`: kastet var gratis.
+   */
+  | {
+      type: 'option';
+      who?: string;
+      option: OptionDef;
+      target?: string | null;
+      slot?: boolean;
+      free?: boolean;
+    }
   /** d20 er skrevet inn: action-økonomien oppdateres først nå, så «Avbryt» før kastet koster ingenting. */
   | {
       type: 'attack';
@@ -698,11 +718,15 @@ export function turReducer(state: CombatState, event: TurnEvent): CombatState {
       const p = who(state, event.who);
       if (!p || !canDo(state, { who: p.id, kind: 'option', option: event.option }).ok) return state;
       const o = event.option;
+      const ownTurn = state.current === p.id;
+      const slot = !!event.slot && ownTurn;
+      if (slot && p.turn.oncePerTurn.includes(SPELL_SLOT_USED)) return state;
       let next = setTurn(state, p.id, (t) => ({
         ...t,
         ...(o.cost === 'bonus' ? { bonus: o.id } : {}),
         ...(o.cost === 'reaction' ? { reaction: o.id } : {}),
         ...(o.cost === 'action' ? { action: 'magic' as const } : {}),
+        ...(slot ? { oncePerTurn: [...t.oncePerTurn, SPELL_SLOT_USED] } : {}),
       }));
       const target = event.target ?? null;
       if (o.startsConcentration) next = startConcentration(next, p.id, o.startsConcentration, target);
@@ -714,10 +738,17 @@ export function turReducer(state: CombatState, event: TurnEvent): CombatState {
           ),
         };
       }
-      const label = o.cost === 'bonus' ? 'Bonus action' : o.cost === 'reaction' ? 'Reaction' : 'Valg';
+      const label =
+        o.cost === 'bonus'
+          ? 'Bonus action'
+          : o.cost === 'reaction'
+            ? 'Reaction'
+            : o.cost === 'action'
+              ? 'Magic'
+              : 'Valg';
       return addLog(
         next,
-        `${p.name}: ${label}: ${o.name}${target ? ` → ${targetName(state, target)}` : ''}`,
+        `${p.name}: ${label}: ${o.name}${target ? ` → ${targetName(state, target)}` : ''}${event.slot ? ' (spell slot)' : event.free ? ' (gratis-kast)' : ''}`,
         p.id,
       );
     }
@@ -752,7 +783,8 @@ export function turReducer(state: CombatState, event: TurnEvent): CombatState {
       const p = who(state, event.who);
       const feet = amount(event.feet);
       if (!p || feet === 0 || !canDo(state, { who: p.id, kind: 'move', feet }).ok) return state;
-      return setTurn(state, p.id, (t) => ({ ...t, moved: t.moved + feet }));
+      const moved = setTurn(state, p.id, (t) => ({ ...t, moved: t.moved + feet }));
+      return addLog(moved, `${p.name} flyttet ${feet} ft (${movementLeft(moved, p.id)} ft igjen)`, p.id);
     }
     case 'standUp': {
       const p = who(state, event.who);

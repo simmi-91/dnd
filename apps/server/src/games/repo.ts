@@ -91,7 +91,24 @@ export async function listGames(db: Db, userId: number): Promise<Game[]> {
         .execute()
     : [];
   const byId = new Map(chars.map((c) => [c.id, c]));
-  return games.map((g) => toApiGame(g, g.character_id == null ? null : byId.get(g.character_id)));
+  // Kamper som pågår, så «Mine spill» kan vise at kampen er lagret og ta deg tilbake til den.
+  const combats = games.length
+    ? await db
+        .selectFrom('dd_combats')
+        .select(['game_id', 'round'])
+        .where('status', '=', 'active')
+        .where(
+          'game_id',
+          'in',
+          games.map((g) => g.id),
+        )
+        .execute()
+    : [];
+  const rounds = new Map(combats.map((c) => [c.game_id, c.round]));
+  return games.map((g) => ({
+    ...toApiGame(g, g.character_id == null ? null : byId.get(g.character_id)),
+    combatRound: rounds.get(g.id) ?? null,
+  }));
 }
 
 /** Spillet med ark og tilstand, eller undefined hvis brukeren ikke eier det. */

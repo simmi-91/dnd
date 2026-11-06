@@ -118,6 +118,7 @@ export interface DdbSpell {
     concentration?: boolean | null;
     ritual?: boolean | null;
     activation?: { activationType?: number | null } | null;
+    description?: string | null;
   } | null;
   limitedUse?: DdbLimitedUse | null;
   prepared?: boolean | null;
