@@ -339,6 +339,10 @@ Anbefalingene i forberedelsen er godtatt. Deloppgavene var 4a (database, vern, t
 - **Bør prøves på ekte telefon:** fargelaget i editoren på iOS, autokorrektur og forslagslista sammen med tastaturet.
 - **Fase 5 er ferdig** (7. november 2026), uten mørkt tema. 5a, 5b og 5c ble validert for seg med ekte kjøring i Chromium, og alle funn som var verdt å rette, er rettet.
   - Lint, typecheck, test (760 tester), build og `prettier --check` går gjennom, og `npm run e2e` (12 tester) går gjennom tre ganger på rad.
-  - CI-jobben `e2e` er ikke kjørt på GitHub ennå.
-  - **Ikke testet live:** meldingen «Ny versjon – last inn på nytt», og installasjon på ekte telefon.
+  - **Testet live av brukeren på Android** (7. november 2026):
+    - Installasjonen virker.
+    - Endringer i ark og kamp uten nett lagres når nettet er tilbake.
+    - Dagboka viser at den krever nett, og den virker som den skal med nett.
+    - «Start kamp» krever nett. Det er slik det er laget, fordi kampen opprettes på serveren.
+  - **Ikke testet:** meldingen «Ny versjon – last inn på nytt» (kommer først ved neste utrulling som endrer webappen), og alt på iPhone (fargelaget i editoren, autokorrektur, forslagslista og tastaturet).
 - **Neste:** alle fasene i planen er ferdige.
