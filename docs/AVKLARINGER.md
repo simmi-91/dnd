@@ -344,5 +344,6 @@ Anbefalingene i forberedelsen er godtatt. Deloppgavene var 4a (database, vern, t
     - Endringer i ark og kamp uten nett lagres når nettet er tilbake.
     - Dagboka viser at den krever nett, og den virker som den skal med nett.
     - «Start kamp» krever nett. Det er slik det er laget, fordi kampen opprettes på serveren.
-  - **Ikke testet:** meldingen «Ny versjon – last inn på nytt» (kommer først ved neste utrulling som endrer webappen), og alt på iPhone (fargelaget i editoren, autokorrektur, forslagslista og tastaturet).
+  - **Testet live:** «Ny versjon – last inn på nytt» dukker opp etter push. Konto viser versjon, commit og byggetid, og hver utrulling gir en ny versjon. CI-jobben `e2e` er grønn og stopper utrulling ved feil.
+  - **Ikke testet:** alt på iPhone (fargelaget i editoren, autokorrektur, forslagslista og tastaturet).
 - **Neste:** alle fasene i planen er ferdige.
