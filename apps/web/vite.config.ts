@@ -1,6 +1,27 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+
+// Versjon, commit og byggetid vises på Konto-siden. Vite tar med VITE_-variabler fra process.env.
+// Byggetiden gjør også at hver utrulling gir en ny sw.js, og dermed meldingen «Ny versjon».
+function commitSha(): string {
+  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7);
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim();
+  } catch {
+    return '';
+  }
+}
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
+  version: string;
+};
+process.env.VITE_APP_VERSION = pkg.version;
+process.env.VITE_BUILD_SHA = commitSha();
+process.env.VITE_BUILD_TIME = new Date().toISOString();
 
 // Farger fra src/styles/global.css (--bg og --ink).
 const BG = '#f3ead8';

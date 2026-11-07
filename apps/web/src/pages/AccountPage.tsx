@@ -4,6 +4,22 @@ import { errorMessage } from '../components/errorMessage';
 import { useDocumentTitle } from '../components/useDocumentTitle';
 import styles from './AccountPage.module.css';
 
+/** Versjonen fra package.json og commit, f.eks. «1.0.0 (379ac5f)». Settes i vite.config.ts. */
+function versionText(): string {
+  const version = import.meta.env.VITE_APP_VERSION as string | undefined;
+  const sha = import.meta.env.VITE_BUILD_SHA as string | undefined;
+  if (!version) return 'Ukjent';
+  return sha ? `${version} (${sha})` : version;
+}
+
+/** Byggetiden i norsk format, f.eks. «7. november 2026 kl. 14:32». */
+function buildTimeText(): string {
+  const raw = import.meta.env.VITE_BUILD_TIME as string | undefined;
+  const date = raw ? new Date(raw) : null;
+  if (!date || Number.isNaN(date.getTime())) return 'Ukjent';
+  return date.toLocaleString('nb-NO', { dateStyle: 'long', timeStyle: 'short' });
+}
+
 export function AccountPage() {
   useDocumentTitle('Konto');
   const me = useMe();
@@ -27,6 +43,14 @@ export function AccountPage() {
             <div>
               <dt className="sc">E-post</dt>
               <dd>{user.email}</dd>
+            </div>
+            <div>
+              <dt className="sc">Versjon</dt>
+              <dd>{versionText()}</dd>
+            </div>
+            <div>
+              <dt className="sc">Bygd</dt>
+              <dd>{buildTimeText()}</dd>
             </div>
           </dl>
           <hr className="rule" />
