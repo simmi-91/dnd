@@ -3,6 +3,7 @@ import {
   combatConflictSchema,
   combatEnvelopeSchema,
   combatResponseSchema,
+  combatStateSchema,
   endCombatResponseSchema,
   type CombatEnvelope,
   type EndCombatResponse,
@@ -11,6 +12,8 @@ import {
 } from '@dnd/shared';
 import { api, isApiRequestError } from '../api/client';
 import { errorMessage } from '../components/errorMessage';
+import { fetchWithOffline, offlineGeneration, offlineKeys, writeOffline } from '../offline/storage';
+import { localSyncStorage, readStoredSync } from '../offline/syncStorage';
 import { VersionedSync, type SyncOptions, type SyncSnapshot } from './stateSync';
 
 // Kampen som pågår i et spill (fase 3b). Holder rede på hvilken kamp som er aktiv, og lager en
@@ -52,6 +55,10 @@ export interface CombatStoreOptions {
 export const COMBAT_POLL_MS = 10_000;
 export const COMBAT_ENDED_ELSEWHERE = 'Kampen er avsluttet på en annen enhet.';
 export const COMBAT_STARTED_ELSEWHERE = 'En kamp pågår allerede. Den er hentet.';
+export const COMBAT_ENDED_OFFLINE_LOST =
+  'Kampen er avsluttet på en annen enhet. Endringene du gjorde uten nett, ble ikke lagret.';
+export const COMBAT_END_NEEDS_NETWORK =
+  'Du er uten nett. Å avslutte kampen krever nett. Endringene i kampen lagres når nettet er tilbake.';
 
 function infoOf(c: CombatEnvelope): CombatInfo {
   return { id: c.id, status: c.status, round: c.round, startedAt: c.startedAt, endedAt: c.endedAt };
@@ -69,6 +76,8 @@ export class CombatStore {
   private snapshot: CombatSnapshot;
   private readonly listeners = new Set<() => void>();
   private readonly opts: CombatStoreOptions;
+  /** Generasjonen til den lokale lagringen. Tømmes den (utlogging, 401), skrives ingenting mer. */
+  private readonly gen = offlineGeneration();
 
   constructor(opts: CombatStoreOptions) {
     this.opts = opts;
@@ -111,6 +120,17 @@ export class CombatStore {
     this.sync?.sendNow();
   };
 
+  /** En annen fane har endret kampen i den lokale lagringen. */
+  syncFromStorage = (): void => {
+    this.sync?.syncFromStorage();
+  };
+
+  /** Nettet er tilbake: send det som venter, eller hent kampen hvis hentingen feilet. */
+  retryNow = (): void => {
+    if (this.sync) this.sync.retryNow();
+    else if (this.error) void this.load();
+  };
+
   /** Starter en kamp (oppsett fra arket og tilstanden). Pågår det alt en, brukes den. */
   start = async (body: StartCombatRequest = {}): Promise<boolean> => {
     if (this.info) return true;
@@ -143,13 +163,18 @@ export class CombatStore {
     if (!info) return null;
     await this.opts.game?.flush();
     if (this.sync && !(await this.sync.flush()) && !this.sync.getSnapshot().gone) {
-      this.error = this.sync.getSnapshot().error ?? 'Kampen er ikke lagret. Prøv igjen.';
+      const snap = this.sync.getSnapshot();
+      this.error =
+        snap.status === 'offline'
+          ? COMBAT_END_NEEDS_NETWORK
+          : (snap.error ?? 'Kampen er ikke lagret. Prøv igjen.');
       this.emit();
       return null;
     }
     try {
       const res = await api.post(`${this.path}/end`, { id: info.id }, endCombatResponseSchema);
       this.drop();
+      writeOffline(offlineKeys.combat(this.opts.gameId), { combat: null }, this.gen);
       this.error = null;
       this.opts.game?.replace(res.state);
       this.opts.onGameState?.(res.state);
@@ -171,10 +196,19 @@ export class CombatStore {
   private async load(): Promise<void> {
     const load = ++this.loads;
     try {
-      const res = await api.get(this.path, combatResponseSchema);
+      // Uten nett brukes kampen slik den var sist (endringene ligger i den lokale lagringen).
+      const res = await fetchWithOffline(offlineKeys.combat(this.opts.gameId), combatResponseSchema, () =>
+        api.get(this.path, combatResponseSchema),
+      );
       if (load !== this.loads) return;
       this.loading = false;
       this.error = null;
+      // Endringer uten nett i en kamp som er avsluttet på en annen enhet i mellomtiden, er tapt.
+      const pending = readStoredSync(offlineKeys.combatSync(this.opts.gameId), combatStateSchema);
+      if (pending && pending.id !== res.combat?.id) {
+        if (pending.dirty) this.notice = COMBAT_ENDED_OFFLINE_LOST;
+        localSyncStorage(offlineKeys.combatSync(this.opts.gameId), combatStateSchema, pending.id).write(null);
+      }
       if (res.combat) {
         if (res.combat.id !== this.info?.id) this.adopt(res.combat);
       } else if (this.info) {
@@ -215,20 +249,31 @@ export class CombatStore {
         return { env: same ? { state: same.state, version: same.version } : null, message: c.data.message };
       },
       onConfirmed: (env) => this.setRound(id, env.state.round),
-      onGone: () => {
+      onGone: (lostOffline) => {
         // Kampen er avsluttet eller byttet ut et annet sted. Hent den som gjelder nå (eller ingen).
         if (this.info?.id !== id) return;
-        this.notice = COMBAT_ENDED_ELSEWHERE;
+        this.notice = lostOffline ? COMBAT_ENDED_OFFLINE_LOST : COMBAT_ENDED_ELSEWHERE;
         this.drop();
         this.emit();
         void this.load();
       },
       onError: this.opts.onError,
+      // Uten nett: endringene lagres lokalt (med kampens ID) og sendes når nettet er tilbake.
+      storage:
+        this.gen === offlineGeneration()
+          ? localSyncStorage(offlineKeys.combatSync(this.opts.gameId), combatStateSchema, id)
+          : undefined,
     };
+    // Husk kampen, så den kan åpnes uten nett etter omlasting.
+    writeOffline(offlineKeys.combat(this.opts.gameId), { combat }, this.gen);
     const sync = new VersionedSync(options);
     this.sync = sync;
     this.unsubscribeSync = sync.subscribe(() => this.emit());
+    // Tilstanden kan komme fra lokal lagring (nyere enn `combat`), så runden hentes derfra.
+    this.setRound(id, sync.getSnapshot().state.round);
     this.emit();
+    // Send endringer som ble liggende fra forrige gang.
+    sync.resume();
   }
 
   private setRound(id: number, round: number): void {

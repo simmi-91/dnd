@@ -1,4 +1,5 @@
 import { apiErrorSchema, REQUESTED_WITH_HEADER, REQUESTED_WITH_VALUE } from '@dnd/shared';
+import { reportRequest } from '../offline/connectivity';
 
 /** Det vi trenger av et Zod-skjema. Holder klienten fri for en direkte zod-avhengighet. */
 export interface Schema<T> {
@@ -50,6 +51,18 @@ async function readJson(res: Response): Promise<unknown> {
   }
 }
 
+/** Ingen svar fra serveren. Meldingen sier at handlingen krever nett. */
+export function networkError(): ApiRequestError {
+  const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+  return new ApiRequestError(
+    0,
+    'network',
+    offline
+      ? 'Du er uten nett. Dette krever nett, så prøv igjen når nettet er tilbake.'
+      : 'Fikk ikke kontakt med serveren. Dette krever nett, så sjekk nettet og prøv igjen.',
+  );
+}
+
 export async function apiRequest<T = undefined>(path: string, options: RequestOptions<T> = {}): Promise<T> {
   const method = options.method ?? 'GET';
   const headers: Record<string, string> = { Accept: 'application/json' };
@@ -72,8 +85,10 @@ export async function apiRequest<T = undefined>(path: string, options: RequestOp
     });
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') throw err;
-    throw new ApiRequestError(0, 'network', 'Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.');
+    reportRequest(false);
+    throw networkError();
   }
+  reportRequest(true);
 
   const data = await readJson(res);
 

@@ -348,17 +348,19 @@ function JournalEditor({ game, initial, nextNumber, playedOn, wide }: EditorProp
 
 function SaveIndicator({ status, error }: { status: SyncStatus; error: string | null }) {
   const text = status === 'error' ? 'Ikke lagret' : status === 'saving' ? 'Lagrer …' : 'Lagret';
+  // Bare feil kunngjøres. «Lagrer …» og «Lagret» mens man skriver blir for pratsomt.
+  const announce = status === 'error';
   return (
     <div
       className={`${styles.sync} ${status === 'error' ? styles.syncError : ''}`}
       data-status={status}
-      role="status"
-      aria-live="polite"
       title={error ?? undefined}
     >
       <span className={styles.dot} aria-hidden="true" data-status={status} />
-      {text}
-      {error && <span className="visually-hidden">: {error}</span>}
+      <span aria-hidden={announce ? true : undefined}>{text}</span>
+      <span className="visually-hidden" role="status" aria-live="polite">
+        {announce ? `${text}${error ? `: ${error}` : ''}` : ''}
+      </span>
     </div>
   );
 }

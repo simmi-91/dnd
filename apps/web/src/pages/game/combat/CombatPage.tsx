@@ -1,5 +1,5 @@
 import { familiarStatus, turReducer, type CombatState, type GameState, type TurnEvent } from '@dnd/rules';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { Loading } from '../../../components/States';
 import { useDocumentTitle } from '../../../components/useDocumentTitle';
@@ -9,6 +9,7 @@ import { useGameContext } from '../GameContext';
 import styles from './Combat.module.css';
 import { CombatContext, type CombatContextValue } from './CombatContext';
 import { RoundView } from './RoundView';
+import { useFocusRescue } from './steps';
 import { SetupView, StartButton } from './SetupView';
 
 interface Snapshot {
@@ -48,6 +49,16 @@ export function CombatPage() {
   const combat = useCombat(game.id, { game: sync });
   const [ending, setEnding] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const rescue = useFocusRescue();
+  // Bekreftelsen bytter ut knappene, så fokus flyttes til «Avbryt» og tilbake til «Avslutt kamp».
+  const endBtn = useRef<HTMLButtonElement>(null);
+  const cancelBtn = useRef<HTMLButtonElement>(null);
+  const confirmWas = useRef(false);
+  useEffect(() => {
+    if (confirm) cancelBtn.current?.focus();
+    else if (confirmWas.current) endBtn.current?.focus();
+    confirmWas.current = confirm;
+  }, [confirm]);
   const [exclude, setExclude] = useState<string[]>([]);
   const [starting, setStarting] = useState(false);
   const state = combat.sync?.state ?? null;
@@ -119,9 +130,9 @@ export function CombatPage() {
   };
 
   return (
-    <div className={`page ${styles.page}`}>
+    <div className={`page ${styles.page}`} {...rescue}>
       {combat.notice && (
-        <div className="alert" role="status">
+        <div className="alert" role="alert">
           {combat.notice}{' '}
           <button type="button" className="link-btn" onClick={combat.clearNotice}>
             OK
@@ -138,10 +149,15 @@ export function CombatPage() {
           Kampen er ikke lagret: {combat.sync.error}
         </div>
       )}
+      {combat.sync?.status === 'offline' && (
+        <p className="dim" role="status">
+          Uten nett: kampen lagres når nettet er tilbake.
+        </p>
+      )}
 
       {!value && (
         <section className="card">
-          <h1>Kamp</h1>
+          <h1 tabIndex={-1}>Kamp</h1>
           <p className="dim">
             Karakteren, kjæledyr med «med i kamp» på og familiaren (når den er til stede) er med. Fiender er
             valgfrie.
@@ -187,7 +203,7 @@ export function CombatPage() {
       {value && (
         <CombatContext.Provider value={value}>
           <header className={styles.bar}>
-            <h1 className={styles.round}>
+            <h1 className={styles.round} tabIndex={-1}>
               {value.state.status === 'setup' ? 'Oppsett' : `Runde ${value.state.round}`}
             </h1>
             {confirm ? (
@@ -195,7 +211,12 @@ export function CombatPage() {
                 <button type="button" className="btn btn--small" onClick={() => void end()}>
                   Ja, avslutt kampen
                 </button>
-                <button type="button" className="btn btn--ghost btn--small" onClick={() => setConfirm(false)}>
+                <button
+                  ref={cancelBtn}
+                  type="button"
+                  className="btn btn--ghost btn--small"
+                  onClick={() => setConfirm(false)}
+                >
                   Avbryt
                 </button>
               </div>
@@ -203,6 +224,7 @@ export function CombatPage() {
               <div className="btn-row">
                 {value.state.status === 'setup' && <StartButton />}
                 <button
+                  ref={endBtn}
                   type="button"
                   className="btn btn--ghost btn--small"
                   disabled={ending}
@@ -219,7 +241,7 @@ export function CombatPage() {
           {value.undo && (
             // Vises etter hvert valg, nederst på skjermen der du er, og forsvinner etter noen sekunder.
             // Ny `key` per steg, så den kommer fram igjen etter neste valg (og etter en angring).
-            <div key={snaps.length} className={styles.snack} role="status">
+            <div key={snaps.length} className={styles.snack}>
               <span className={styles.snackText}>{value.state.log[0]?.text ?? 'Endret'}</span>
               <button type="button" className="btn btn--small" onClick={value.undo}>
                 Angre

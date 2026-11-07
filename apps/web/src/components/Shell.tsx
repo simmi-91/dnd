@@ -1,6 +1,8 @@
-import { NavLink, Outlet, useMatch } from 'react-router';
+import { useEffect, useRef } from 'react';
+import { NavLink, Outlet, useLocation, useMatch, useNavigationType } from 'react-router';
 import { useMe } from '../api/auth';
 import { parseGameId, useGameName } from '../api/games';
+import { OfflineBadge, UpdatePrompt } from './AppStatus';
 import { NavIcon, type NavIconName } from './NavIcon';
 import styles from './Shell.module.css';
 
@@ -46,6 +48,22 @@ export function Shell() {
   const gameName = useGameName(gameId);
   const items = gameId != null ? gameItems(gameId) : MAIN_ITEMS;
 
+  // Ved skifte av side flyttes fokus til innholdet, så tastatur og skjermleser ikke blir stående i menyen.
+  // Ikke ved første lasting, ikke ved omdirigering (`replace`), og ikke inne i kampanjeboka: der flytter
+  // BookPage fokus til oppføringen eller skjemaet, så brukeren slipper å tabbe gjennom lista igjen.
+  const { pathname } = useLocation();
+  const navType = useNavigationType();
+  const mainRef = useRef<HTMLElement>(null);
+  const lastPath = useRef(pathname);
+  useEffect(() => {
+    const before = lastPath.current;
+    if (before === pathname) return;
+    lastPath.current = pathname;
+    const book = (p: string) => /^\/spill\/\d+\/bok(\/|$)/.test(p);
+    if (navType === 'REPLACE' || (book(before) && book(pathname))) return;
+    mainRef.current?.focus({ preventScroll: true });
+  }, [pathname, navType]);
+
   return (
     <div className={styles.shell}>
       <a className={styles.skip} href="#innhold">
@@ -72,9 +90,11 @@ export function Shell() {
           ))}
         </ul>
       </nav>
-      <main id="innhold" className={styles.main} tabIndex={-1}>
+      <main id="innhold" ref={mainRef} className={styles.main} tabIndex={-1}>
+        <OfflineBadge />
         <Outlet />
       </main>
+      <UpdatePrompt />
     </div>
   );
 }

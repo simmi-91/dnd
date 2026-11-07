@@ -31,7 +31,8 @@
   /* HP mellom en fjerdedel og halvparten. Mørkere enn --bonus, så tallet holder AA. */
   --hp-mid: #8a5a10;
   --input-bg: #fffaf0;
-  --input-line: #b9a47c;
+  /* Kant rundt felt og valg: minst 3:1 mot --bg og --card (WCAG 1.4.11). */
+  --input-line: #8a7650;
   --placeholder: #7d6c55;
   --shadow: rgba(43, 33, 24, 0.25);
   --backdrop: rgba(43, 33, 24, 0.55);
@@ -201,6 +202,7 @@ a {
 }
 
 .btn--small {
+  min-width: var(--touch);
   padding: 8px 14px;
   font-size: 0.8rem;
 }
@@ -281,6 +283,7 @@ textarea.input {
 }
 
 .link-btn {
+  min-width: var(--touch);
   min-height: var(--touch);
   padding: 0 6px;
   border: 0;

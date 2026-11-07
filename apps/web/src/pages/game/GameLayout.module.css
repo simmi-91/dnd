@@ -35,6 +35,11 @@
   background: var(--error);
 }
 
+.dot[data-status='offline'] {
+  background: transparent;
+  border: 1.5px solid var(--dim);
+}
+
 .notice {
   position: sticky;
   top: 0;
@@ -69,4 +74,11 @@
   100% {
     opacity: 0;
   }
+}
+
+/* Uten nett står statusen i flyten ved siden av «Uten nett» (Shell), så den ikke dekker overskriften. */
+.sync[data-status='offline'] {
+  position: static;
+  margin: 8px 0 0 8px;
+  vertical-align: middle;
 }

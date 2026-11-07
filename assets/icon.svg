@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>D&amp;D kampguide</title>
+  <!-- Pergament helt ut i kantene. Terningen holder seg innenfor den sikre sonen for maskable ikoner (radius 40 %). -->
+  <rect width="512" height="512" fill="#f3ead8"/>
+  <circle cx="256" cy="256" r="196" fill="none" stroke="#d8c7a5" stroke-width="6"/>
+  <polygon points="256,98 393,177 393,335 256,414 119,335 119,177" fill="#7a1f1a" stroke="#2b2118" stroke-width="14" stroke-linejoin="round"/>
+  <polygon points="256,168 344,318 168,318" fill="#5f1714"/>
+  <g fill="none" stroke="#f3ead8" stroke-width="7" stroke-linejoin="round" stroke-linecap="round">
+    <polygon points="256,168 344,318 168,318"/>
+    <path d="M256 98 L256 168 M393 177 L256 168 M393 177 L344 318 M393 335 L344 318 M256 414 L344 318 M256 414 L168 318 M119 335 L168 318 M119 177 L168 318 M119 177 L256 168"/>
+  </g>
+</svg>

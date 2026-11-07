@@ -1,5 +1,5 @@
 import type { EntryKind } from '@dnd/shared';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import {
   BOOK_TABS,
@@ -63,13 +63,46 @@ export function BookPage() {
   const showList = split || !detailOpen;
   const showDetail = split || detailOpen;
 
+  // Åpnes eller byttes oppføringen (ikke ved første lasting), flytter fokus til overskriften eller det første
+  // feltet i skjemaet. Lukkes detaljvisningen på mobil, går fokus til overskriften over lista.
+  const listHeadRef = useRef<HTMLHeadingElement>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
+  const detailKey = `${entryId}|${newKind}|${editing}`;
+  const prevKey = useRef(detailKey);
+  useEffect(() => {
+    if (prevKey.current === detailKey) return;
+    prevKey.current = detailKey;
+    if (!detailOpen) {
+      if (!split) listHeadRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    const el = detailRef.current;
+    if (!el) return;
+    const tryFocus = () => {
+      const t =
+        el.querySelector<HTMLElement>('form input, form select, form textarea') ??
+        el.querySelector<HTMLElement>('#entry-name, h2');
+      t?.focus({ preventScroll: true });
+      return t != null;
+    };
+    if (tryFocus()) return;
+    // Oppføringen hentes fra serveren, så vent til den er på plass.
+    const mo = new MutationObserver(() => {
+      if (tryFocus()) mo.disconnect();
+    });
+    mo.observe(el, { childList: true, subtree: true });
+    return () => mo.disconnect();
+  }, [detailKey, detailOpen, split]);
+
   return (
     <div className={`${styles.layout} ${split ? styles.split : ''}`}>
       {showList && (
         <section className={styles.listCol} aria-label="Oppslagsverk">
           <header className={styles.head}>
             <div className="sc">{game.name}</div>
-            <h1>Kampanjebok</h1>
+            <h1 ref={listHeadRef} tabIndex={-1}>
+              Kampanjebok
+            </h1>
             <Link className={`btn btn--ghost btn--small ${styles.journalLink}`} to={journalPath(gameId)}>
               Dagbok
             </Link>
@@ -100,13 +133,13 @@ export function BookPage() {
                           to={`${bookPath(gameId)}?fane=${t}`}
                           className={`${styles.pill} ${t === tab ? styles.pillOn : ''}`}
                           aria-current={t === tab ? 'page' : undefined}
-                          aria-label={count != null ? `${TAB_LABEL[t]} ${count}` : undefined}
                         >
                           {TAB_LABEL[t]}
                           {count != null && (
-                            <span className={styles.count} aria-hidden="true">
-                              {count}
-                            </span>
+                            <>
+                              {' '}
+                              <span className={styles.count}>{count}</span>
+                            </>
                           )}
                         </Link>
                       </li>
@@ -134,7 +167,8 @@ export function BookPage() {
       )}
 
       {showDetail && (
-        <div className={styles.detailCol}>
+        <div ref={detailRef} className={styles.detailCol}>
+          {!showList && <h1 className="visually-hidden">Kampanjebok</h1>}
           {newKind != null ? (
             <EntryForm
               key={`ny-${newKind}`}
@@ -239,7 +273,7 @@ function EntryPane({ gameId, entryId, editing, lookup, backTo }: EntryPaneProps)
   const detail = useEntry(entryId > 0 ? entryId : null);
   const missing = (
     <div className="card">
-      <h2>Fant ikke oppføringen</h2>
+      <h2 tabIndex={-1}>Fant ikke oppføringen</h2>
       <p className="dim">Den kan være slettet, eller lenken er feil.</p>
       <Link className="btn" to={backTo ?? bookPath(gameId)}>
         Til oppslagsverket

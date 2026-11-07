@@ -15,12 +15,16 @@
     "build": "npm run build -w @dnd/web && npm run build -w @dnd/server",
     "test": "vitest run",
     "lint": "eslint .",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p e2e/tsconfig.json",
+    "e2e": "npm run build && playwright test -c e2e",
+    "e2e:run": "playwright test -c e2e",
     "format": "prettier --write .",
     "migrate": "npm run migrate -w @dnd/server"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.0",
     "@types/node": "^22.0.0",
     "concurrently": "^10.0.6",
     "eslint": "^10.14.0",

@@ -74,10 +74,15 @@ export function HpPanel() {
         Hit Points
       </h2>
       <div className={styles.hpRow}>
-        <span className={`${styles.hpNum} tabular`} data-tone={hpTone(hp, sheet.hpMax)}>
+        <span className={`${styles.hpNum} tabular`} data-tone={hpTone(hp, sheet.hpMax)} aria-hidden="true">
           {hp}
         </span>
-        <span className="dim tabular">/ {sheet.hpMax}</span>
+        <span className="dim tabular" aria-hidden="true">
+          / {sheet.hpMax}
+        </span>
+        <span className="visually-hidden" aria-live="polite" aria-atomic="true">
+          HP {hp} av {sheet.hpMax}
+        </span>
         {state.tempHp > 0 && (
           <span className={`${styles.temp} tabular`}>
             +{state.tempHp} temp

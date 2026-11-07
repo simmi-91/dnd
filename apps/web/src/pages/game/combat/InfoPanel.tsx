@@ -1,12 +1,46 @@
-import { useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import styles from './Combat.module.css';
 import type { InfoContent } from './info';
 
+/**
+ * Fokus går til panelet når det åpnes (så skjermleseren leser det) og tilbake til knappen som åpnet
+ * det når det lukkes. Escape lukker.
+ */
+function useInfoFocus(open: boolean, onClose: () => void) {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const el = ref.current;
+    el?.focus({ preventScroll: true });
+    return () => {
+      const now = document.activeElement;
+      if (opener?.isConnected && (!now || now === document.body || el?.contains(now))) {
+        opener.focus({ preventScroll: true });
+      }
+    };
+  }, [open]);
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      onClose();
+    }
+  };
+  return { ref, onKeyDown };
+}
+
 /** Infoboksen på laptop: under deltakerlisten til venstre. */
 export function InfoBox({ info, onClose }: { info: InfoContent | null; onClose: () => void }) {
+  const { ref, onKeyDown } = useInfoFocus(info !== null, onClose);
   if (!info) return null;
   return (
-    <section className={`card ${styles.infoBox}`} aria-label={`Info: ${info.title}`}>
+    <section
+      ref={ref}
+      tabIndex={-1}
+      onKeyDown={onKeyDown}
+      className={`card ${styles.infoBox}`}
+      aria-label={`Info: ${info.title}`}
+    >
       <div className={styles.infoHead}>
         <b>{info.title}</b>
         <button type="button" className={styles.infoClose} onClick={onClose} aria-label="Lukk info">
@@ -29,6 +63,7 @@ const LARGE = 0.75;
 export function InfoDrawer({ info, onClose }: { info: InfoContent | null; onClose: () => void }) {
   const [height, setHeight] = useState<number | null>(null);
   const drag = useRef<{ startY: number; startH: number; moved: boolean } | null>(null);
+  const { ref, onKeyDown } = useInfoFocus(info !== null, onClose);
   if (!info) return null;
   const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
   const h = height ?? Math.round(vh * SMALL);
@@ -54,7 +89,14 @@ export function InfoDrawer({ info, onClose }: { info: InfoContent | null; onClos
   };
 
   return (
-    <section className={styles.drawer} style={{ height: h }} aria-label={`Info: ${info.title}`}>
+    <section
+      ref={ref}
+      tabIndex={-1}
+      onKeyDown={onKeyDown}
+      className={styles.drawer}
+      style={{ height: h }}
+      aria-label={`Info: ${info.title}`}
+    >
       <button
         type="button"
         className={styles.drawerHandle}
@@ -62,6 +104,10 @@ export function InfoDrawer({ info, onClose }: { info: InfoContent | null; onClos
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
+        // Enter og mellomrom gir et klikk uten peker (detail 0). Pekerklikk er allerede håndtert av onPointerUp.
+        onClick={(e) => {
+          if (e.detail === 0) setHeight(Math.round(vh * (large ? SMALL : LARGE)));
+        }}
         onPointerCancel={() => (drag.current = null)}
       >
         <span aria-hidden="true" />

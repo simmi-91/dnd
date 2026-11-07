@@ -235,7 +235,7 @@ export function characterParticipant(
   return makeParticipant({
     id: CHARACTER_ID,
     kind: 'character',
-    name: sheet.name.split(' ')[0] || sheet.name,
+    name: sheet.name.split(/[\s,]+/)[0] || sheet.name,
     initiativeBonus: sheet.initiative,
     ac: sheet.ac,
     conditions: (game?.conditions ?? []).filter(isConditionId),

@@ -296,10 +296,10 @@ Hver fase skal kunne rulles ut og brukes for seg.
 **Ferdig når:** Det som skrives i dagboka under en økt dukker opp i oppslagsverket uten ekstra arbeid.
 
 ### Fase 5 – PWA og finpuss
-- [ ] Manifest, ikon (`assets/icon.svg`) og service worker. Ark og kamp kan leses uten nett, og skrivinger settes i kø til nettet er tilbake
-- [ ] Gjennomgang av tilgjengelighet (kontrast, fokus, skjermleser-etiketter)
-- [ ] Playwright-tester for innlogging (med testmodus), nytt spill, én kamprunde og dagbok → oppslagsverk
-- [ ] Eventuelt et mørkt tema
+- [x] Manifest, ikon (`assets/icon.svg`) og service worker. Ark og kamp kan leses uten nett, og skrivinger settes i kø til nettet er tilbake (5a)
+- [x] Gjennomgang av tilgjengelighet (kontrast, fokus, skjermleser-etiketter) (5b)
+- [x] Playwright-tester for innlogging (med testmodus), nytt spill, én kamprunde og dagbok → oppslagsverk (5c)
+- [ ] Eventuelt et mørkt tema (utsatt, se AVKLARINGER)
 
 ## 11. Risiko
 

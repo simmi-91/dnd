@@ -36,7 +36,7 @@ export function LoginPage() {
   const busy = signIn.isPending || devSignIn.isPending;
 
   return (
-    <div className={styles.wrap}>
+    <main className={styles.wrap}>
       <section className={`card ${styles.panel}`} aria-labelledby="login-title">
         <div className="sc">D&amp;D 5e · 2024</div>
         <h1 id="login-title" className={styles.title}>
@@ -104,6 +104,6 @@ export function LoginPage() {
           </p>
         )}
       </section>
-    </div>
+    </main>
   );
 }

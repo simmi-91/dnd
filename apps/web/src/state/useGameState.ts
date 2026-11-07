@@ -1,9 +1,17 @@
-import { gameStateEnvelopeSchema, type GameDetailResponse, type GameStateEnvelope } from '@dnd/shared';
+import {
+  gameStateEnvelopeSchema,
+  gameStateSchema,
+  type GameDetailResponse,
+  type GameStateEnvelope,
+} from '@dnd/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { handleAuthError } from '../api/auth';
 import { api } from '../api/client';
 import { gameKeys, gamePath } from '../api/games';
+import { onOnline } from '../offline/connectivity';
+import { offlineKeys, onOfflineChange } from '../offline/storage';
+import { localSyncStorage } from '../offline/syncStorage';
 import { StateSync, type SyncSnapshot } from './stateSync';
 
 export interface GameStateHook extends SyncSnapshot {
@@ -42,6 +50,8 @@ export function useGameState(
         onConfirmed: (env) =>
           qc.setQueryData<GameDetailResponse>(gameKeys.detail(gameId), (d) => (d ? { ...d, state: env } : d)),
         onError: (err) => handleAuthError(qc, err),
+        // Uten nett: endringene lagres lokalt og sendes når nettet er tilbake.
+        storage: localSyncStorage(offlineKeys.stateSync(gameId), gameStateSchema),
       }),
   );
 
@@ -51,16 +61,23 @@ export function useGameState(
       else sync.sendNow();
     };
     const onPageHide = () => sync.sendNow();
-    // Tilstanden i bufferen kan være gammel (endret på en annen enhet), så hent den ved oppstart.
+    // Endringer fra forrige gang (uten nett) sendes først. Tilstanden i bufferen kan være gammel
+    // (endret på en annen enhet), så hent den ved oppstart når alt er lagret.
+    sync.resume();
     void sync.refetch();
+    const offOnline = onOnline(sync.retryNow);
+    // Samme spill i en annen fane: ta inn det den har lagret lokalt.
+    const offStorage = onOfflineChange(offlineKeys.stateSync(gameId), sync.syncFromStorage);
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('pagehide', onPageHide);
     return () => {
       document.removeEventListener('visibilitychange', onVisibility);
+      offOnline();
+      offStorage();
       window.removeEventListener('pagehide', onPageHide);
       sync.sendNow();
     };
-  }, [sync]);
+  }, [sync, gameId]);
 
   const snap = useSyncExternalStore(sync.subscribe, sync.getSnapshot);
   return {

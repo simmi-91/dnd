@@ -131,8 +131,8 @@
   background: var(--paper);
 }
 
-.faded {
-  opacity: 0.7;
+.faded .rowName {
+  color: var(--dim);
 }
 
 .rowMain {

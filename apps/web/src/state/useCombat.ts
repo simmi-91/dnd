@@ -3,6 +3,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { handleAuthError } from '../api/auth';
 import { gameKeys } from '../api/games';
+import { onOnline } from '../offline/connectivity';
+import { offlineKeys, onOfflineChange } from '../offline/storage';
 import { COMBAT_POLL_MS, CombatStore, type CombatSnapshot, type GameSyncLink } from './combatStore';
 
 export interface CombatHook extends CombatSnapshot {
@@ -51,14 +53,18 @@ export function useCombat(gameId: number, options: Options = {}): CombatHook {
     };
     const onPageHide = () => store.sendNow();
     void store.refetch();
+    const offOnline = onOnline(store.retryNow);
+    const offStorage = onOfflineChange(offlineKeys.combatSync(gameId), store.syncFromStorage);
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('pagehide', onPageHide);
     return () => {
       document.removeEventListener('visibilitychange', onVisibility);
+      offOnline();
+      offStorage();
       window.removeEventListener('pagehide', onPageHide);
       store.sendNow();
     };
-  }, [store]);
+  }, [store, gameId]);
 
   const pollMs = options.pollMs ?? COMBAT_POLL_MS;
   useEffect(() => {

@@ -230,3 +230,68 @@
     display: block;
   }
 }
+
+/* «Uten nett»: liten og rolig, øverst i innholdet (i flyten, så den ikke dekker overskrifter). */
+.offline {
+  margin: 8px 0 0 16px;
+  vertical-align: middle;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px dashed var(--input-line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--dim);
+  font-size: 0.85rem;
+}
+
+.offlineDot {
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--dim);
+  border-radius: 50%;
+}
+
+/* «Ny versjon – last inn på nytt»: over bunnmenyen på mobil, nede til høyre på større skjermer. */
+.update {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 10px);
+  z-index: 16;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: calc(100vw - 16px);
+  padding: 0 4px 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 2px 8px var(--shadow);
+  white-space: nowrap;
+}
+
+.updateClose {
+  min-width: var(--touch);
+  min-height: var(--touch);
+  border: 0;
+  background: none;
+  color: var(--dim);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.updateClose:focus-visible {
+  outline: var(--focus);
+}
+
+@media (min-width: 700px) {
+  .update {
+    left: auto;
+    right: 18px;
+    bottom: 16px;
+    transform: none;
+  }
+}

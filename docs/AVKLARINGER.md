@@ -273,6 +273,32 @@ Anbefalingene i forberedelsen er godtatt. Deloppgavene var 4a (database, vern, t
 - **Gjenstår:** skjules fanen mens den første POST-en av økta i dag pågår, kan den siste teksten etter den gå tapt.
 - **Testkjøring:** `$?` og `${PIPESTATUS}` inne i `wsl.exe … bash -ic '…'` byttes ut av det ytre skallet. Les exit-koden til `wsl.exe`.
 
+## Avklart før fase 5 (7. november 2026)
+
+- **Uten nett** kan bare ark og kamp endres. Dagbok, oppslagsverk, nytt spill og henting fra D&D Beyond sier at de krever nett.
+- **Konflikt etter nett-brudd:** serveren vinner, som ved 409, og brukeren får beskjed om at endringene uten nett ikke ble lagret.
+- **Mørkt tema** tas ikke nå. Fargene ligger i CSS-variabler, så det kan komme senere.
+
+## Beslutninger under fase 5 (PWA og finpuss)
+
+- **PWA (5a):** `vite-plugin-pwa` med `registerType: 'prompt'` og meldingen «Ny versjon – last inn på nytt». Service workeren (`sw.js`) legger bare app-skallet i forhåndslageret og cacher ingen API-svar. `/api/` og `/img/` er unntatt fra navigasjonsfallbacken.
+  - **Ikon:** `assets/icon.svg` (d20) og PNG-er som er laget én gang og sjekket inn. `assets/` er `publicDir`. Endres ikonet, må PNG-ene lages på nytt for hånd.
+  - **Lesing uten nett:** innlogget bruker, Mine spill, spillet og kampen hentes alltid fra nettet først, og svaret huskes i localStorage (`dnd:offline:v1:`). Det lagrede brukes bare når serveren ikke svarer.
+  - **Kø:** `VersionedSync` lagrer `{state, version, dirty, base}` per spill og kamp, og sender ved oppstart, `online` og den vanlige retryen. Er serverens tilstand lik den lokale, vises ingen konfliktmelding. Faner deler posten via `storage`-eventen, og «Endret i en annen fane» vises bare når noe faktisk forkastes.
+  - **Utlogging:** lageret tømmes ved utlogging, 401 og sperring, i alle faner (markøren `dnd:offline-cleared` og en generasjonsteller). Utlogging uten nett setter `dnd:logout-pending`, og utloggingen sendes til serveren før noe annet når nettet er tilbake.
+  - **Kjent:** «Uten nett» vises også når nettet er der, men serveren ikke svarer. Det er ingen tidsgrense på forespørsler.
+- **Tilgjengelighet (5b):** axe er rent for serious og critical på alle hovedsidene, på 390 og 1280 px.
+  - Fokus flyttes til `main` ved ruteskifte, men ikke ved første lasting, `replace` eller overganger inne i boka. Der styrer `BookPage` fokuset.
+  - `useFocusRescue` i kampen flytter fokus når knappen med fokus forsvinner, men bare innen 4 sekunder etter at brukeren selv trykket. Endringer fra en annen enhet flytter aldri fokus. Bokser gir fokus tilbake til knappen som åpnet dem, eller til steg-tittelen.
+  - HP kunngjøres i én skjult live-region. Lagringsstatus kunngjør bare problemer («Ikke lagret», «Lagres når nettet er tilbake»).
+  - **Akseptert:** `aria-allowed-role` (minor) for `role="combobox"` på `textarea` i `MentionEditor`.
+- **Playwright (5c):** `e2e/` i rota, `npm run e2e` (bygger først) og `npm run e2e:run`. Prosjektene er `mobil` (Pixel 7) og `laptop` (1280 px), begge Chromium og med én arbeider.
+  - Databasen er `dnd_e2e` (`E2E_DB_NAME`, må slutte på `_e2e`). Den slettes og lages på nytt før kjøringen og slettes etterpå. Serveren kjører det bygde oppsettet på port 8133 med dev-login (`e2e@example.com`, `NODE_ENV=test`).
+  - axe-sjekken feiler bare på serious og critical.
+  - **CI:** egen jobb `e2e` ved push og PR. `deploy` krever grønn `check` og `e2e` (brukerens valg). `concurrency` ligger på `deploy`-jobben, og arbeidsflyten har `permissions: contents: read`.
+- **Rettet underveis:** deltakernavnet i kampen tar fornavnet uten komma («Elowen», ikke «Elowen,»).
+- **Kjent:** `NODE_ENV` er `development` som standard i `config.ts`. Mangler produksjonens `.env` `NODE_ENV=production` og har `DEV_LOGIN_EMAIL`, er dev-login på. Se `deploy/README.md`.
+
 ## Status
 
 - **Fase 0 og 1 er ferdige** (4. november 2026). Appen kjører på `https://dnd.3lin.no`, innlogging med Google virker på mobil og laptop, og push til `main` ruller ut automatisk.
@@ -311,4 +337,8 @@ Anbefalingene i forberedelsen er godtatt. Deloppgavene var 4a (database, vern, t
   - Lint, typecheck, test (735 tester), build og `prettier --check` går gjennom.
   - Migrering `0004` kjøres automatisk ved utrulling. Lokalt: `npm run migrate`.
 - **Bør prøves på ekte telefon:** fargelaget i editoren på iOS, autokorrektur og forslagslista sammen med tastaturet.
-- **Neste fase:** 5, PWA og finpuss.
+- **Fase 5 er ferdig** (7. november 2026), uten mørkt tema. 5a, 5b og 5c ble validert for seg med ekte kjøring i Chromium, og alle funn som var verdt å rette, er rettet.
+  - Lint, typecheck, test (760 tester), build og `prettier --check` går gjennom, og `npm run e2e` (12 tester) går gjennom tre ganger på rad.
+  - CI-jobben `e2e` er ikke kjørt på GitHub ennå.
+  - **Ikke testet live:** meldingen «Ny versjon – last inn på nytt», og installasjon på ekte telefon.
+- **Neste:** alle fasene i planen er ferdige.

@@ -286,7 +286,7 @@ describe('useCombat', () => {
     api.server.failPut = 0;
     act(() => result.current.update((s) => ({ ...s, darkness: true })));
     await advance(700);
-    expect(result.current.sync?.status).toBe('error');
+    expect(result.current.sync?.status).toBe('offline');
     await advance(5000);
     expect(api.puts()).toHaveLength(2);
     expect(result.current.sync).toMatchObject({ status: 'saved', version: 2 });

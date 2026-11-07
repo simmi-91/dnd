@@ -66,7 +66,7 @@
 }
 
 .input:focus-visible {
-  outline: 2px solid var(--gold);
+  outline: var(--focus);
   outline-offset: 1px;
 }
 
@@ -165,7 +165,7 @@
 }
 
 .trigger:focus-visible {
-  outline: 2px solid var(--gold);
+  outline: var(--focus);
   outline-offset: 2px;
 }
 

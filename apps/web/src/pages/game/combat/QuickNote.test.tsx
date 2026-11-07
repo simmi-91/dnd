@@ -194,3 +194,43 @@ describe('hurtignotat i kamp (4e)', () => {
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Hurtignotat' }));
   });
 });
+
+describe('tilgjengelighet i kampen (5b)', () => {
+  it('fanene til høyre har piltaster, roving tabindex og et tabpanel', () => {
+    setViewport(true);
+    render(<Harness combat={combat()} />);
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs.map((t) => t.getAttribute('tabindex'))).toEqual(['0', '-1', '-1', '-1']);
+    expect(screen.getByRole('tabpanel').getAttribute('aria-labelledby')).toBe(tabs[0]!.id);
+
+    tabs[0]!.focus();
+    fireEvent.keyDown(tabs[0]!, { key: 'ArrowRight' });
+    expect(tabs[1]!.getAttribute('aria-selected')).toBe('true');
+    expect(document.activeElement).toBe(tabs[1]);
+    fireEvent.keyDown(tabs[1]!, { key: 'ArrowLeft' });
+    fireEvent.keyDown(tabs[0]!, { key: 'ArrowLeft' });
+    expect(document.activeElement).toBe(tabs[3]);
+    fireEvent.keyDown(tabs[3]!, { key: 'Home' });
+    expect(document.activeElement).toBe(tabs[0]);
+    fireEvent.keyDown(tabs[0]!, { key: 'End' });
+    expect(tabs[3]!.getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tabpanel').getAttribute('aria-labelledby')).toBe(tabs[3]!.id);
+  });
+
+  it('deltakerknappene sier hvem som har turen og hvor mye HP de har, uten symboler', () => {
+    setViewport(false);
+    render(<Harness combat={combat()} />);
+    const nav = screen.getByRole('navigation', { name: 'Deltakere i initiativrekkefølge' });
+    const first = within(nav).getAllByRole('button')[0]!;
+    expect(first.textContent).toContain('har turen');
+    expect(first.textContent).toMatch(/\d+ av \d+ HP/);
+    expect(first.querySelector('[aria-hidden="true"]')).not.toBeNull();
+  });
+
+  it('HP-raden leses opp når tallet endres (aria-live)', () => {
+    setViewport(false);
+    render(<Harness combat={combat()} />);
+    const live = document.querySelector('[aria-live="polite"][aria-atomic="true"]');
+    expect(live?.textContent).toContain('HP');
+  });
+});

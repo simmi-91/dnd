@@ -64,11 +64,8 @@ export function TurnBar({ p, busy }: { p: Participant; busy: boolean }) {
           </button>
         ))}
       </div>
-      {last && (
-        <p className={styles.last} role="status" aria-live="polite">
-          Sist: {last.text}
-        </p>
-      )}
+      {/* Området står alltid i DOM-en, så skjermlesere melder fra om hver ny «Sist». Angre-varselet under er ikke live. */}
+      <div role="status">{last && <p className={styles.last}>Sist: {last.text}</p>}</div>
       <div className="btn-row">
         <TurnButton p={p} busy={busy} />
         {undo && (

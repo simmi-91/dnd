@@ -9,7 +9,7 @@ import {
   roundComplete,
   type Participant,
 } from '@dnd/rules';
-import { useState } from 'react';
+import { useId, useState, type KeyboardEvent } from 'react';
 import { sign, speedsText } from '../../../components/format';
 import { useMediaQuery } from '../../../components/useMediaQuery';
 import { useGameContext } from '../GameContext';
@@ -89,13 +89,31 @@ export function RoundView() {
                   onClick={() => setPicked({ id, current: state.current })}
                 >
                   <span className={styles.tabName}>
-                    {done ? '✓ ' : p.defeated ? '✗ ' : state.current === id ? '▶ ' : ''}
+                    <span aria-hidden="true">
+                      {done ? '✓ ' : p.defeated ? '✗ ' : state.current === id ? '▶ ' : ''}
+                    </span>
                     {p.name}
-                    {state.checks.some((c) => c.who === id) ? ' !' : ''}
+                    <span aria-hidden="true">{state.checks.some((c) => c.who === id) ? ' !' : ''}</span>
+                    <span className="visually-hidden">
+                      {done
+                        ? ', ferdig med runden'
+                        : p.defeated
+                          ? ', ute av kampen'
+                          : state.current === id
+                            ? ', har turen'
+                            : ''}
+                      {state.checks.some((c) => c.who === id) ? ', har en ventende sjekk' : ''}
+                    </span>
                   </span>
                   <span className={`${styles.tabMeta} tabular`}>
-                    {p.initiative ?? '–'}
-                    {hp ? ` · ${hp.hp}/${hp.max}` : ''}
+                    <span aria-hidden="true">
+                      {p.initiative ?? '–'}
+                      {hp ? ` · ${hp.hp}/${hp.max}` : ''}
+                    </span>
+                    <span className="visually-hidden">
+                      {p.initiative != null ? `Initiativ ${p.initiative}` : 'Uten initiativ'}
+                      {hp ? `, ${hp.hp} av ${hp.max} HP` : ''}
+                    </span>
                   </span>
                 </button>
               );
@@ -118,8 +136,10 @@ export function RoundView() {
             </div>
           )}
           {state.participants.map((p) => (
-            <section key={p.id} data-panel hidden={who !== p.id} aria-label={`Panel for ${p.name}`}>
-              <h2 className={styles.panelTitle}>{p.name}</h2>
+            <section key={p.id} data-panel={p.id} hidden={who !== p.id} aria-label={`Panel for ${p.name}`}>
+              <h2 className={styles.panelTitle} tabIndex={-1}>
+                {p.name}
+              </h2>
               <Panel p={p} />
             </section>
           ))}
@@ -198,15 +218,37 @@ const SIDE_TABS = [
 function SideColumn({ note }: { note: NoteState }) {
   const { sheet, sync } = useGameContext();
   const [tab, setTab] = useState<(typeof SIDE_TABS)[number][0]>('ark');
+  const base = useId();
+  const tabId = (id: string) => `${base}-tab-${id}`;
+
+  // Piltaster, Home og End flytter mellom fanene. Bare den valgte fanen står i tabulatorrekkefølgen.
+  function onTabKeys(e: KeyboardEvent<HTMLDivElement>) {
+    const i = SIDE_TABS.findIndex(([id]) => id === tab);
+    const n = SIDE_TABS.length;
+    let next: number | null = null;
+    if (e.key === 'ArrowRight') next = (i + 1) % n;
+    else if (e.key === 'ArrowLeft') next = (i + n - 1) % n;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = n - 1;
+    if (next == null) return;
+    e.preventDefault();
+    const id = SIDE_TABS[next]![0];
+    setTab(id);
+    document.getElementById(tabId(id))?.focus();
+  }
+
   return (
     <aside className={styles.side} aria-label="Ark og notater">
-      <div className={styles.sideTabs} role="tablist">
+      <div className={styles.sideTabs} role="tablist" aria-label="Ark og notater" onKeyDown={onTabKeys}>
         {SIDE_TABS.map(([id, label]) => (
           <button
             key={id}
+            id={tabId(id)}
             type="button"
             role="tab"
             aria-selected={tab === id}
+            aria-controls={`${base}-panel`}
+            tabIndex={tab === id ? 0 : -1}
             className={styles.sideTab}
             onClick={() => setTab(id)}
           >
@@ -214,58 +256,65 @@ function SideColumn({ note }: { note: NoteState }) {
           </button>
         ))}
       </div>
-      {tab === 'ark' && (
-        <div className={styles.stack}>
-          <p className="dim">
-            Spell DC {sheet.spellDc ?? '–'} · Spell attack{' '}
-            {sheet.spellAttack != null ? sign(sheet.spellAttack) : '–'} · PB {sign(sheet.pb)}
-          </p>
-          <span className="sc">Saves</span>
-          <ul className={styles.plainGrid}>
-            {ABILITIES.map((a) => (
-              <li key={a}>
-                {a.toUpperCase()} <b className="tabular">{sign(sheet.saves[a].bonus)}</b>
-              </li>
-            ))}
-          </ul>
-          <span className="sc">Skills</span>
-          <ul className={styles.plainGrid}>
-            {sheet.skills.map((s) => (
-              <li key={s.key}>
-                {s.name} <b className="tabular">{sign(s.bonus)}</b>
-              </li>
-            ))}
-          </ul>
+      <div
+        role="tabpanel"
+        id={`${base}-panel`}
+        aria-labelledby={tabId(tab)}
+        tabIndex={tab === 'notater' ? undefined : 0}
+      >
+        {tab === 'ark' && (
+          <div className={styles.stack}>
+            <p className="dim">
+              Spell DC {sheet.spellDc ?? '–'} · Spell attack{' '}
+              {sheet.spellAttack != null ? sign(sheet.spellAttack) : '–'} · PB {sign(sheet.pb)}
+            </p>
+            <span className="sc">Saves</span>
+            <ul className={styles.plainGrid}>
+              {ABILITIES.map((a) => (
+                <li key={a}>
+                  {a.toUpperCase()} <b className="tabular">{sign(sheet.saves[a].bonus)}</b>
+                </li>
+              ))}
+            </ul>
+            <span className="sc">Skills</span>
+            <ul className={styles.plainGrid}>
+              {sheet.skills.map((s) => (
+                <li key={s.key}>
+                  {s.name} <b className="tabular">{sign(s.bonus)}</b>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {tab === 'bjorner' && (
+          <div className={styles.stack}>
+            {sheet.pets.length === 0 && <p className="dim">Ingen kjæledyr i arket.</p>}
+            {sheet.pets.map((pet) => {
+              const removed = sync.state.pets[pet.id]?.hpRemoved ?? 0;
+              const max = petHpMax(sync.state, sheet, pet.id) ?? pet.hpMax;
+              return (
+                <div key={pet.id} className="card">
+                  <b>{pet.name}</b>
+                  <p className="dim">
+                    AC {pet.ac} · HP {Math.max(0, max - removed)}/{max} · {speedsText(pet.speeds)}
+                  </p>
+                  <ul className={styles.plain}>
+                    {pet.attacks.map((a) => (
+                      <li key={a.name}>
+                        {a.name} {sign(a.hit)} · {a.count}d{a.sides}
+                        {a.mod ? sign(a.mod) : ''} {a.dmgType}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {tab === 'logg' && <LogList />}
+        <div hidden={tab !== 'notater'}>
+          <QuickNote note={note} />
         </div>
-      )}
-      {tab === 'bjorner' && (
-        <div className={styles.stack}>
-          {sheet.pets.length === 0 && <p className="dim">Ingen kjæledyr i arket.</p>}
-          {sheet.pets.map((pet) => {
-            const removed = sync.state.pets[pet.id]?.hpRemoved ?? 0;
-            const max = petHpMax(sync.state, sheet, pet.id) ?? pet.hpMax;
-            return (
-              <div key={pet.id} className="card">
-                <b>{pet.name}</b>
-                <p className="dim">
-                  AC {pet.ac} · HP {Math.max(0, max - removed)}/{max} · {speedsText(pet.speeds)}
-                </p>
-                <ul className={styles.plain}>
-                  {pet.attacks.map((a) => (
-                    <li key={a.name}>
-                      {a.name} {sign(a.hit)} · {a.count}d{a.sides}
-                      {a.mod ? sign(a.mod) : ''} {a.dmgType}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
-      )}
-      {tab === 'logg' && <LogList />}
-      <div hidden={tab !== 'notater'}>
-        <QuickNote note={note} />
       </div>
     </aside>
   );

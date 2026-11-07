@@ -35,11 +35,18 @@ export function HpControl({
   return (
     <div className={styles.hp}>
       <div className={styles.hpRow}>
-        <span className="sc">HP</span>
-        <span className={`${styles.hpNum} tabular`} data-tone={hpTone(hp, max)}>
+        <span className="sc" aria-hidden="true">
+          HP
+        </span>
+        <span className={`${styles.hpNum} tabular`} data-tone={hpTone(hp, max)} aria-hidden="true">
           {hp}
         </span>
-        <span className="dim tabular">/ {max}</span>
+        <span className="dim tabular" aria-hidden="true">
+          / {max}
+        </span>
+        <span className="visually-hidden" aria-live="polite" aria-atomic="true">
+          HP {hp} av {max}
+        </span>
       </div>
       {hp === 0 && <p className={styles.down}>{downText ?? `${name} er nede på 0 HP.`}</p>}
       <div className={styles.hpControls}>

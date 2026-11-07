@@ -10,6 +10,7 @@ import {
   type UpdateGameRequest,
 } from '@dnd/shared';
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { fetchWithOffline, offlineKeys, removeOffline, writeOffline } from '../offline/storage';
 import { api } from './client';
 
 export const gameKeys = {
@@ -20,16 +21,27 @@ export const gameKeys = {
 
 export const gamePath = (id: number) => `/api/games/${id}`;
 
+/** Henter ett spill. Uten nett brukes det som ble hentet sist (arket, til lesing). */
+function fetchGame(id: number, signal?: AbortSignal) {
+  return fetchWithOffline(offlineKeys.game(id), gameDetailResponseSchema, () =>
+    api.get(gamePath(id), gameDetailResponseSchema, signal),
+  );
+}
+
 /** Legger et ferskt detaljsvar i bufferen og ber listen hente seg på nytt. */
 function storeDetail(qc: QueryClient, detail: GameDetailResponse) {
   qc.setQueryData(gameKeys.detail(detail.game.id), detail);
+  writeOffline(offlineKeys.game(detail.game.id), detail);
   void qc.invalidateQueries({ queryKey: gameKeys.list() });
 }
 
 export function useGames() {
   return useQuery({
     queryKey: gameKeys.list(),
-    queryFn: ({ signal }) => api.get('/api/games', gamesResponseSchema, signal),
+    queryFn: ({ signal }) =>
+      fetchWithOffline(offlineKeys.games, gamesResponseSchema, () =>
+        api.get('/api/games', gamesResponseSchema, signal),
+      ),
     select: (res) => res.games,
   });
 }
@@ -37,7 +49,7 @@ export function useGames() {
 export function useGame(id: number) {
   return useQuery({
     queryKey: gameKeys.detail(id),
-    queryFn: ({ signal }) => api.get(gamePath(id), gameDetailResponseSchema, signal),
+    queryFn: ({ signal }) => fetchGame(id, signal),
   });
 }
 
@@ -45,7 +57,7 @@ export function useGame(id: number) {
 export function useGameName(id: number | null): string | undefined {
   const q = useQuery({
     queryKey: gameKeys.detail(id ?? 0),
-    queryFn: ({ signal }) => api.get(gamePath(id ?? 0), gameDetailResponseSchema, signal),
+    queryFn: ({ signal }) => fetchGame(id ?? 0, signal),
     enabled: id != null,
     select: (d) => d.game.name,
   });
@@ -87,6 +99,10 @@ export function useDeleteGame(id: number) {
   return useMutation({
     mutationFn: () => api.delete(gamePath(id)),
     onSuccess: () => {
+      removeOffline(offlineKeys.game(id));
+      removeOffline(offlineKeys.stateSync(id));
+      removeOffline(offlineKeys.combat(id));
+      removeOffline(offlineKeys.combatSync(id));
       qc.removeQueries({ queryKey: gameKeys.detail(id) });
       void qc.invalidateQueries({ queryKey: gameKeys.list() });
     },

@@ -226,7 +226,7 @@ describe('useGameState', () => {
     expect(api.puts()[0]?.keepalive).toBe(true);
   });
 
-  it('viser feil og prøver igjen ved nettverksfeil', async () => {
+  it('venter uten nett og prøver igjen ved nettverksfeil', async () => {
     let fail = true;
     const api = mockStateApi({
       put: (body) => {
@@ -242,8 +242,9 @@ describe('useGameState', () => {
 
     act(() => result.current.update((s) => ({ ...s, hpRemoved: 2 })));
     await advance(700);
-    expect(result.current.status).toBe('error');
-    expect(result.current.error).toMatch(/kontakt med serveren/);
+    // Ingen svar: «Lagres når nettet er tilbake», ikke en feil.
+    expect(result.current.status).toBe('offline');
+    expect(result.current.error).toBeNull();
 
     await advance(5000);
     expect(api.puts()).toHaveLength(2);

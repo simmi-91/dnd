@@ -188,7 +188,7 @@ export function EntryDetail({ gameId, entry, mentionedIn, lookup, backTo }: Entr
       )}
       <header className={styles.detailHead}>
         <KindTag kind={entry.kind} status={entry.status} />
-        <h2 id="entry-name" className={styles.detailName}>
+        <h2 id="entry-name" className={styles.detailName} tabIndex={-1}>
           {entry.name}
         </h2>
         {entry.archived && <p className="dim">Arkivert</p>}

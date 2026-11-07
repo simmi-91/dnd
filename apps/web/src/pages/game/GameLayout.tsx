@@ -81,7 +81,7 @@ function GameSession({ game, sheet, initial }: { game: Game; sheet: Sheet; initi
     <GameContext.Provider value={{ game, sheet, sync }}>
       <SyncIndicator status={sync.status} error={sync.error} />
       {sync.notice && (
-        <div className={`alert ${styles.notice}`} role="status">
+        <div className={`alert ${styles.notice}`} role="alert">
           <span>{sync.notice}</span>
           <button type="button" className="link-btn" onClick={sync.clearNotice}>
             OK
@@ -94,18 +94,27 @@ function GameSession({ game, sheet, initial }: { game: Game; sheet: Sheet; initi
 }
 
 function SyncIndicator({ status, error }: { status: string; error: string | null }) {
-  const text = status === 'error' ? 'Ikke lagret' : status === 'saving' ? 'Lagrer …' : 'Lagret';
+  const text =
+    status === 'error'
+      ? 'Ikke lagret'
+      : status === 'offline'
+        ? 'Lagres når nettet er tilbake'
+        : status === 'saving'
+          ? 'Lagrer …'
+          : 'Lagret';
+  // Bare problemer kunngjøres. «Lagrer …» og «Lagret» ved hver endring blir for pratsomt.
+  const announce = status === 'error' || status === 'offline';
   return (
     <div
       className={`${styles.sync} ${status === 'error' ? styles.syncError : ''}`}
       data-status={status}
-      role="status"
-      aria-live="polite"
       title={error ?? undefined}
     >
       <span className={styles.dot} aria-hidden="true" data-status={status} />
-      {text}
-      {error && <span className="visually-hidden">: {error}</span>}
+      <span aria-hidden={announce ? true : undefined}>{text}</span>
+      <span className="visually-hidden" role="status" aria-live="polite">
+        {announce ? `${text}${error ? `: ${error}` : ''}` : ''}
+      </span>
     </div>
   );
 }

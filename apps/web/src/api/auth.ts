@@ -1,4 +1,4 @@
-import { apiErrorSchema, authConfigSchema, meResponseSchema, type User } from '@dnd/shared';
+import { apiErrorSchema, authConfigSchema, meResponseSchema, userSchema, type User } from '@dnd/shared';
 import {
   MutationCache,
   QueryCache,
@@ -7,7 +7,16 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { api, ApiRequestError, isApiRequestError } from './client';
+import { api, ApiRequestError, isApiRequestError, networkError } from './client';
+import {
+  clearOffline,
+  isLogoutPending,
+  isNetworkError,
+  offlineKeys,
+  readOffline,
+  setLogoutPending,
+  writeOffline,
+} from '../offline/storage';
 
 export const queryKeys = {
   me: ['me'] as const,
@@ -36,6 +45,7 @@ function shouldRetry(failureCount: number, err: unknown): boolean {
 export function handleAuthError(qc: QueryClient, err: unknown, key?: readonly unknown[]) {
   if (!isApiRequestError(err)) return;
   const isMe = key?.[0] === queryKeys.me[0];
+  if (err.status === 401) clearOffline();
   if (err.status === 401 && qc.getQueryData(queryKeys.me)) {
     qc.setQueryData(queryKeys.me, null);
   } else if (isBlockedError(err) && !isMe && !isBlockedError(qc.getQueryState(queryKeys.me)?.error)) {
@@ -53,26 +63,71 @@ export function createQueryClient(options: QueryClientOptions = {}): QueryClient
     queryCache: new QueryCache({ onError: (err, query) => handleAuthError(qc, err, query.queryKey) }),
     mutationCache: new MutationCache({ onError: (err) => handleAuthError(qc, err) }),
     defaultOptions: {
+      // Spør alltid, også når nettleseren sier at nettet er borte. Spørringene faller da tilbake på det
+      // som er lagret lokalt (src/offline/), og endringer gir straks en melding om at de krever nett, i
+      // stedet for å vente i det stille.
       queries: {
         retry: options.retry ?? shouldRetry,
         refetchOnWindowFocus: false,
         staleTime: 30_000,
+        networkMode: 'always',
       },
-      mutations: { retry: false },
+      mutations: { retry: false, networkMode: 'always' },
     },
   });
   return qc;
 }
 
-/** Innlogget bruker, eller `null` når API-et svarer 401. */
+/**
+ * Innlogget bruker, eller `null` når API-et svarer 401. Uten nett brukes brukeren fra forrige gang,
+ * så ark og kamp kan åpnes. Lagringen slettes ved 401, sperret konto og når en annen bruker logger inn.
+ */
 export async function fetchMe(signal?: AbortSignal): Promise<User | null> {
+  // Logget ut uten nett: send utloggingen først. Til serveren har svart, er brukeren logget ut her.
+  if (isLogoutPending()) {
+    await flushPendingLogout();
+    return null;
+  }
   try {
     const res = await api.get('/api/me', meResponseSchema, signal);
+    if (readOffline(offlineKeys.me, userSchema)?.id !== res.user.id) clearOffline();
+    writeOffline(offlineKeys.me, res.user);
     return res.user;
   } catch (err) {
-    if (isApiRequestError(err) && err.status === 401) return null;
+    if (isApiRequestError(err) && err.status === 401) {
+      clearOffline();
+      return null;
+    }
+    if (isBlockedError(err)) clearOffline();
+    if (isNetworkError(err)) {
+      const cached = readOffline(offlineKeys.me, userSchema);
+      if (cached) return cached;
+    }
     throw err;
   }
+}
+
+let flushing: Promise<boolean> | null = null;
+
+/**
+ * Sender en utlogging som ble gjort uten nett. Flagget fjernes først når serveren har svart 2xx eller
+ * 401 (sesjonen er borte). Gir true når ingen utlogging venter lenger.
+ */
+export function flushPendingLogout(): Promise<boolean> {
+  if (!isLogoutPending()) return Promise.resolve(true);
+  flushing ??= (async () => {
+    try {
+      await api.post('/api/auth/logout');
+      setLogoutPending(false);
+    } catch (err) {
+      if (isApiRequestError(err) && err.status === 401) setLogoutPending(false);
+    } finally {
+      flushing = null;
+    }
+    clearOffline();
+    return !isLogoutPending();
+  })();
+  return flushing;
 }
 
 export function useMe() {
@@ -98,7 +153,11 @@ export function useGoogleSignIn() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (credential: string) => api.post('/api/auth/google', { credential }, meResponseSchema),
-    onSuccess: (res) => qc.setQueryData(queryKeys.me, res.user),
+    onSuccess: (res) => {
+      // Ny innlogging: en gammel utlogging uten nett skal ikke sendes etterpå.
+      setLogoutPending(false);
+      qc.setQueryData(queryKeys.me, res.user);
+    },
   });
 }
 
@@ -116,9 +175,12 @@ export async function devLogin(): Promise<void> {
       headers: { Accept: 'application/json' },
     });
   } catch {
-    throw new ApiRequestError(0, 'network', 'Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.');
+    throw networkError();
   }
-  if (res.type === 'opaqueredirect' || (res.status >= 200 && res.status < 400)) return;
+  if (res.type === 'opaqueredirect' || (res.status >= 200 && res.status < 400)) {
+    setLogoutPending(false);
+    return;
+  }
 
   let body: unknown;
   try {
@@ -146,6 +208,8 @@ export function useDevLogin() {
 export function useLogout() {
   const qc = useQueryClient();
   const clear = () => {
+    // Også det som er lagret for bruk uten nett, og endringer som ikke er sendt.
+    clearOffline();
     qc.setQueryData(queryKeys.me, null);
     // Fjern alt som hørte til brukeren, men behold innloggingsoppsettet.
     qc.removeQueries({ predicate: (q) => q.queryKey[0] !== 'me' && q.queryKey[0] !== 'auth' });
@@ -153,9 +217,16 @@ export function useLogout() {
   return useMutation({
     mutationFn: () => api.post('/api/auth/logout'),
     onSuccess: clear,
-    // Er sesjonen allerede borte eller kontoen sperret, er brukeren i praksis logget ut.
+    // Er sesjonen allerede borte eller kontoen sperret, er brukeren i praksis logget ut. Uten nett
+    // logges brukeren ut her på enheten (lageret tømmes), selv om serveren ikke fikk beskjed.
     onError: (err) => {
-      if (isBlockedError(err) || (isApiRequestError(err) && err.status === 401)) clear();
+      if (isNetworkError(err)) {
+        // Serveren fikk ikke beskjed: send utloggingen når nettet er tilbake (flushPendingLogout).
+        setLogoutPending(true);
+        clear();
+      } else if (isBlockedError(err) || (isApiRequestError(err) && err.status === 401)) {
+        clear();
+      }
     },
   });
 }

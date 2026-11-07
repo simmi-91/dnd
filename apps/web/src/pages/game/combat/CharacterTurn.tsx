@@ -459,11 +459,18 @@ function CharacterHp({ p }: { p: Participant }) {
   return (
     <section className={`card ${styles.hpCard}`} aria-label={`HP for ${p.name}`}>
       <div className={styles.hpRow}>
-        <span className="sc">HP</span>
-        <span className={`${styles.hpNum} tabular`} data-tone={hpTone(hp, sheet.hpMax)}>
+        <span className="sc" aria-hidden="true">
+          HP
+        </span>
+        <span className={`${styles.hpNum} tabular`} data-tone={hpTone(hp, sheet.hpMax)} aria-hidden="true">
           {hp}
         </span>
-        <span className="dim tabular">/ {sheet.hpMax}</span>
+        <span className="dim tabular" aria-hidden="true">
+          / {sheet.hpMax}
+        </span>
+        <span className="visually-hidden" aria-live="polite" aria-atomic="true">
+          HP {hp} av {sheet.hpMax}
+        </span>
         {game.tempHp > 0 && <span className="tabular">+{game.tempHp} temp</span>}
         <span className="dim">AC {sheet.ac}</span>
       </div>
@@ -488,11 +495,7 @@ function CharacterHp({ p }: { p: Participant }) {
           </button>
         </div>
       </div>
-      {message && (
-        <p className="dim" role="status">
-          {message}
-        </p>
-      )}
+      {message && <p className="dim">{message}</p>}
       {status !== 'up' && (
         <div className={styles.stack} role="group" aria-label="Death saves">
           <p>
