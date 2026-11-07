@@ -24,7 +24,8 @@ test('dagbok med @ og # gir oppføringer i Kampanjebok, med søk', async ({ page
   await expect(editor).toHaveValue(new RegExp(`@${person}\\s+i #${place}\\s+og fant ingenting\\.`));
 
   // Vent til teksten er lagret: indikatoren sier «Lagret», og serveren har hele teksten med koblinger.
-  await expect(page.getByText('Lagret', { exact: true })).toBeVisible();
+  // «Lagret» skjules etter 2,5 s, så sjekk teksten i DOM-en, ikke at den er synlig.
+  await expect(page.getByText('Lagret', { exact: true })).toBeAttached();
   await expect
     .poll(async () => {
       const list = (await (await page.request.get(`/api/games/${gameId}/sessions`)).json()) as {

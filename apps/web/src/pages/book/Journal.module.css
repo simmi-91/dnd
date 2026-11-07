@@ -299,17 +299,12 @@
 }
 
 .sync[data-status='saved'] {
-  animation: sync-fade 2.5s ease forwards;
+  animation: sync-hide 2.5s step-end forwards;
   pointer-events: none;
 }
 
-@keyframes sync-fade {
-  0%,
-  60% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
+@keyframes sync-hide {
+  to {
+    visibility: hidden;
   }
 }
